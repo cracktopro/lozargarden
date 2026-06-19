@@ -38,7 +38,7 @@ GitHub Pages: `npm run build:pages` → `dist/` con base `/lozargarden/`
 URL de producción: **https://cracktopro.github.io/lozargarden/**
 
 1. El repo está en GitHub (`cracktopro/lozargarden`)
-2. En el repo → **Settings → Pages → Build and deployment → Source:** elige **GitHub Actions**
+2. En el repo → **Settings → Pages → Build and deployment → Source:** elige **GitHub Actions** (no «Deploy from a branch», que publicaría el código fuente sin compilar)
 3. Cada push a `main` ejecuta `.github/workflows/deploy-pages.yml`:
    - `npm ci`
    - `npm run build:pages` (Vite con `base: /lozargarden/`)
@@ -51,7 +51,7 @@ URL de producción: **https://cracktopro.github.io/lozargarden/**
 GitHub Pages sirve el sitio en un subdirectorio (`/lozargarden/`), no en la raíz del dominio. Por eso:
 
 - `vite.config.js` usa `base: '/lozargarden/'` en modo `github-pages`
-- Los iconos se resuelven con `import.meta.env.BASE_URL` en `js/icons.js` (helper `iconPath()`)
+- Los iconos se resuelven con `resolveBaseUrl()` en `js/icons.js` (`import.meta.env.BASE_URL` en Vite, o detección de `/lozargarden/` en el navegador)
 - En `index.html` las rutas de iconos son relativas (`icons/...`)
 
 Iconos: fuente en `public/icons/`, se copian a `icons/` (dev) y `dist/icons/` (producción).

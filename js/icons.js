@@ -1,10 +1,24 @@
-/** Rutas e helpers de iconos PNG — servidos desde public/icons (respeta import.meta.env.BASE_URL) */
+/** Rutas e helpers de iconos PNG — public/icons (respeta base del sitio en dev, build y GitHub Pages) */
 
-export function iconPath(file) {
-  return `${import.meta.env.BASE_URL}icons/${file}`;
+function resolveBaseUrl() {
+  const viteBase = import.meta.env?.BASE_URL;
+  if (viteBase) return viteBase;
+
+  if (typeof window !== "undefined") {
+    const { pathname } = window.location;
+    if (pathname === "/lozargarden" || pathname.startsWith("/lozargarden/")) {
+      return "/lozargarden/";
+    }
+  }
+
+  return "/";
 }
 
-const BASE = `${import.meta.env.BASE_URL}icons`;
+export function iconPath(file) {
+  return `${resolveBaseUrl()}icons/${file}`;
+}
+
+const BASE = `${resolveBaseUrl()}icons`;
 
 export const ICONS = {
   favicon: `${BASE}/favicon.png`,
