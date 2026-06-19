@@ -374,6 +374,71 @@ body::before {
   filter: drop-shadow(0 3px 8px var(--kg-shadow));
 }
 
+.stat-card-link {
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.stat-card-link:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px var(--kg-shadow-pink);
+}
+
+.stat-card-link:focus-visible {
+  outline: 2px solid var(--kg-pink-deep);
+  outline-offset: 2px;
+}
+
+.modal-title-icon,
+.badge-plant-icon,
+.badge-treatment-icon {
+  width: 1.15rem;
+  height: 1.15rem;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.badge-incidence,
+.badge-treatment {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.35rem 0.6rem;
+  border-radius: 999px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.badge-incidence {
+  background: #fde8e8;
+  color: #c53030;
+  border: 1px solid #feb2b2 !important;
+}
+
+.badge-treatment {
+  background: var(--kg-lavender);
+  color: #6b46c1;
+  border: 1px solid #d6bcfa !important;
+}
+
+.badge-incidence:hover,
+.badge-treatment:hover {
+  transform: scale(1.03);
+  box-shadow: 0 2px 8px var(--kg-shadow-pink);
+}
+
+.plant-history-item {
+  padding: 0.75rem 0;
+  border-bottom: 1px dashed rgba(232, 160, 184, 0.35);
+}
+
+.plant-history-item:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
 .stat-value {
   font-size: 2rem;
   font-weight: 800;

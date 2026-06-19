@@ -63,6 +63,13 @@ export function debounce(fn, ms = 300) {
   };
 }
 
+export function getTreatmentPlantIds(treatment) {
+  if (!treatment) return [];
+  if (Array.isArray(treatment.plantIds) && treatment.plantIds.length) return treatment.plantIds;
+  if (treatment.plantId) return [treatment.plantId];
+  return [];
+}
+
 export function formatCapacityDisplay(capacidad) {
   if (!capacidad) return "";
   const text = capacidad.trim();

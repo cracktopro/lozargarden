@@ -1,6 +1,6 @@
 import * as db from "../db.js";
 import * as catalog from "../catalog.js";
-import { uid, nowISO, todayDate, nowTime, formatDateTime, escapeHtml, debounce } from "../utils.js";
+import { uid, nowISO, todayDate, nowTime, formatDateTime, escapeHtml, debounce, getTreatmentPlantIds } from "../utils.js";
 import {
   pageHeader, emptyState, searchInput, showModal, hideModal,
   showToast, confirmDialog,
@@ -19,24 +19,36 @@ function selectedProductoIds(productos, productoNombre) {
   return match ? [match.id] : [];
 }
 
+function setTreatmentModalTitle(text) {
+  document.getElementById("appModalLabel").innerHTML = `
+    <span class="d-inline-flex align-items-center gap-2">
+      ${iconImg(ICONS.page.treatments, "modal-title-icon", "")}
+      <span>${escapeHtml(text)}</span>
+    </span>`;
+}
+
 function treatmentFormHtml(treatment = null, plants = [], productos = []) {
   const t = treatment || {
-    plantId: plants[0]?.id || "",
+    plantIds: [],
     fecha: todayDate(),
     hora: nowTime(),
     detalle: "",
     producto: "",
   };
 
+  const plantItems = plants.map((p) => ({ id: p.id, nombre: p.label }));
+
   return `
     <form id="treatment-form">
       <div class="row g-3">
         <div class="col-12">
-          <label class="form-label" for="treatment-plant">Planta *</label>
-          <select class="form-select" id="treatment-plant" required>
-            <option value="">— Seleccionar —</option>
-            ${plants.map((p) => `<option value="${p.id}" ${t.plantId === p.id ? "selected" : ""}>${escapeHtml(p.label)}</option>`).join("")}
-          </select>
+          <label class="form-label">Plantas *</label>
+          ${renderSearchablePickerHtml({
+            id: "treatment-plants-picker",
+            items: plantItems,
+            selectedIds: getTreatmentPlantIds(t),
+            searchPlaceholder: "Buscar planta...",
+          })}
         </div>
         <div class="col-md-6">
           <label class="form-label" for="treatment-fecha">Fecha *</label>
@@ -82,23 +94,25 @@ async function openTreatmentModal(treatment = null) {
   }
 
   showModal(
-    treatment ? "✏️ Editar tratamiento" : "💧 Nuevo tratamiento",
+    treatment ? "Editar tratamiento" : "Nuevo tratamiento",
     treatmentFormHtml(treatment, plants, productos),
     `
       <button type="button" class="btn btn-kawaii-outline" data-bs-dismiss="modal">Cancelar</button>
       <button type="button" class="btn btn-kawaii" id="save-treatment-btn">Guardar</button>
     `
   );
+  setTreatmentModalTitle(treatment ? "Editar tratamiento" : "Nuevo tratamiento");
 
+  bindSearchablePicker("treatment-plants-picker");
   bindSearchablePicker("treatment-producto-picker");
 
   document.getElementById("save-treatment-btn").addEventListener("click", async () => {
-    const plantId = document.getElementById("treatment-plant").value;
+    const plantIds = getSearchablePickerValues("treatment-plants-picker");
     const fecha = document.getElementById("treatment-fecha").value;
     const hora = document.getElementById("treatment-hora").value;
     const detalle = document.getElementById("treatment-detalle").value.trim();
-    if (!plantId || !fecha || !hora || !detalle) {
-      showToast("Completa los campos obligatorios", "error");
+    if (!plantIds.length || !fecha || !hora || !detalle) {
+      showToast("Selecciona al menos una planta y completa los campos obligatorios", "error");
       return;
     }
 
@@ -106,7 +120,7 @@ async function openTreatmentModal(treatment = null) {
 
     const data = {
       id: treatment?.id || uid(),
-      plantId,
+      plantIds,
       fecha,
       hora,
       producto: resolveProductoName(productos, productoId),
@@ -122,13 +136,21 @@ async function openTreatmentModal(treatment = null) {
   });
 }
 
-async function renderTreatment(treatment, plantLabel) {
+function renderTreatment(treatment, plantMap) {
+  const plantIds = getTreatmentPlantIds(treatment);
+  const plantBadges = plantIds
+    .map(
+      (id) =>
+        `<span class="badge badge-kawaii-green">${iconImg(ICONS.page.plants, "badge-plant-icon", "")} ${escapeHtml(plantMap[id] || "Planta")}</span>`
+    )
+    .join(" ");
+
   return `
     <article class="list-item-kawaii">
       <div class="d-flex justify-content-between align-items-start gap-2">
         <div>
           <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
-            <span class="badge badge-kawaii-green">🌿 ${escapeHtml(plantLabel)}</span>
+            ${plantBadges}
             <span class="timeline-date">${escapeHtml(formatDateTime(treatment.fecha, treatment.hora))}</span>
           </div>
           ${treatment.producto ? `<p class="small fw-semibold mb-1"><i class="bi bi-droplet"></i> ${escapeHtml(treatment.producto)}</p>` : ""}
@@ -150,13 +172,13 @@ export async function render() {
   const plantMap = Object.fromEntries(plants.map((p) => [p.id, p.label]));
 
   const listHtml = treatments.length
-    ? `<div id="treatments-list">${await Promise.all(treatments.map((t) => renderTreatment(t, plantMap[t.plantId] || "Planta"))).then((h) => h.join(""))}</div>`
+    ? `<div id="treatments-list">${treatments.map((t) => renderTreatment(t, plantMap)).join("")}</div>`
     : emptyState(ICONS.page.treatments, "Sin tratamientos", "Registra riegos, abonos, fungicidas y demás cuidados");
 
   return `
     ${pageHeader(
       "Historial de tratamientos",
-      "Qué, cuándo y sobre qué planta se aplicó cada cuidado",
+      "Qué, cuándo y sobre qué plantas se aplicó cada cuidado",
       `<button class="btn btn-kawaii" id="add-treatment-btn"><i class="bi bi-plus-lg"></i> Nuevo tratamiento</button>`,
       ICONS.page.treatments
     )}

@@ -10,7 +10,7 @@ const TABS = [
   { key: "plagas", label: "Plagas", icon: ICONS.catalog.plagas },
   { key: "enfermedades", label: "Enfermedades", icon: ICONS.catalog.enfermedades },
   { key: "estados", label: "Estados", icon: ICONS.catalog.estados },
-  { key: "productos", label: "Productos", icon: ICONS.catalog.productos },
+  { key: "productos", label: "Tratamientos", icon: ICONS.catalog.productos },
 ];
 
 let activeTab = "plantas";
@@ -214,7 +214,7 @@ export async function render() {
   return `
     ${pageHeader(
       "Catálogos",
-      "Plantas, plagas, enfermedades, estados y productos compartidos en Firebase para todos los usuarios",
+      "Plantas, plagas, enfermedades, estados y tratamientos compartidos en Firebase para todos los usuarios",
       `<button class="btn btn-kawaii btn-sm" id="add-catalog-btn"><i class="bi bi-plus-lg"></i> Añadir</button>`,
       ICONS.catalog[activeTab]
     )}

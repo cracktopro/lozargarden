@@ -1,6 +1,6 @@
 import * as db from "../db.js";
 import * as catalog from "../catalog.js";
-import { uid, nowISO, escapeHtml, debounce, renderToxicityBadge } from "../utils.js";
+import { uid, nowISO, escapeHtml, debounce, renderToxicityBadge, formatDateTime, getTreatmentPlantIds } from "../utils.js";
 import {
   pageHeader, emptyState, searchInput, showModal, hideModal,
   showToast, confirmDialog, renderPhotoUploadHtml,
@@ -16,13 +16,90 @@ async function loadPlantPhotos(plantId) {
 }
 
 async function getPlantCardData(plant) {
-  const [planta, estado, container, photos] = await Promise.all([
+  const [planta, estado, container, photos, plagas, enfermedades] = await Promise.all([
     catalog.findPlantaById(plant.catalogPlantId),
     catalog.findEstadoById(plant.estadoId),
     plant.containerId ? db.getById("containers", plant.containerId) : null,
     loadPlantPhotos(plant.id),
+    catalog.getCatalog("plagas"),
+    catalog.getCatalog("enfermedades"),
   ]);
-  return { planta, estado, container, photos };
+  return { planta, estado, container, photos, plagas, enfermedades };
+}
+
+function countPlantTreatments(plantId, allTreatments) {
+  return allTreatments.filter((t) => getTreatmentPlantIds(t).includes(plantId)).length;
+}
+
+function getPlantTreatments(plantId, allTreatments) {
+  return allTreatments
+    .filter((t) => getTreatmentPlantIds(t).includes(plantId))
+    .sort((a, b) => `${b.fecha}${b.hora}`.localeCompare(`${a.fecha}${a.hora}`));
+}
+
+async function openIncidencesModal(plant) {
+  const [plagas, enfermedades] = await Promise.all([
+    catalog.getCatalog("plagas"),
+    catalog.getCatalog("enfermedades"),
+  ]);
+  const plagaNames = (plant.plagaIds || [])
+    .map((id) => plagas.find((p) => p.id === id)?.nombre)
+    .filter(Boolean);
+  const enfermedadNames = (plant.enfermedadIds || [])
+    .map((id) => enfermedades.find((e) => e.id === id)?.nombre)
+    .filter(Boolean);
+
+  const body = `
+    <div class="row g-3">
+      <div class="col-md-6">
+        <h3 class="h6 fw-bold text-danger"><i class="bi bi-bug"></i> Plagas</h3>
+        ${
+          plagaNames.length
+            ? `<ul class="mb-0 ps-3">${plagaNames.map((n) => `<li>${escapeHtml(n)}</li>`).join("")}</ul>`
+            : `<p class="text-muted small mb-0">Sin plagas registradas</p>`
+        }
+      </div>
+      <div class="col-md-6">
+        <h3 class="h6 fw-bold text-danger"><i class="bi bi-virus"></i> Enfermedades</h3>
+        ${
+          enfermedadNames.length
+            ? `<ul class="mb-0 ps-3">${enfermedadNames.map((n) => `<li>${escapeHtml(n)}</li>`).join("")}</ul>`
+            : `<p class="text-muted small mb-0">Sin enfermedades registradas</p>`
+        }
+      </div>
+    </div>`;
+
+  showModal("Incidencias de la planta", body, `<button type="button" class="btn btn-kawaii-outline" data-bs-dismiss="modal">Cerrar</button>`);
+}
+
+async function openPlantTreatmentsModal(plant, allTreatments) {
+  const { planta } = await getPlantCardData(plant);
+  const displayName = plant.apodo || planta?.nombre || "Planta";
+  const items = getPlantTreatments(plant.id, allTreatments);
+
+  const body = items.length
+    ? `<div class="d-flex flex-column gap-3">${items
+        .map(
+          (t) => `
+        <div class="plant-history-item">
+          <div class="small text-muted mb-1">${escapeHtml(formatDateTime(t.fecha, t.hora))}</div>
+          ${t.producto ? `<div class="small fw-semibold mb-1"><i class="bi bi-droplet"></i> ${escapeHtml(t.producto)}</div>` : ""}
+          <p class="mb-0">${escapeHtml(t.detalle)}</p>
+        </div>`
+        )
+        .join("")}</div>`
+    : `<p class="text-muted mb-0">Esta planta aún no tiene tratamientos registrados.</p>`;
+
+  showModal(
+    `Tratamientos — ${displayName}`,
+    body,
+    `<button type="button" class="btn btn-kawaii-outline" data-bs-dismiss="modal">Cerrar</button>`
+  );
+  document.getElementById("appModalLabel").innerHTML = `
+    <span class="d-inline-flex align-items-center gap-2">
+      ${iconImg(ICONS.page.treatments, "modal-title-icon", "")}
+      <span>Tratamientos — ${escapeHtml(displayName)}</span>
+    </span>`;
 }
 
 function plantFormHtml(plant = null, catalogPlantas, estados, plagas, enfermedades, containers) {
@@ -175,7 +252,7 @@ async function openPlantModal(plant = null) {
   });
 }
 
-async function renderPlantCard(plant) {
+async function renderPlantCard(plant, allTreatments) {
   const { planta, estado, container, photos } = await getPlantCardData(plant);
   const displayName = plant.apodo || planta?.nombre || "Planta sin nombre";
   const imgHtml = photos.length
@@ -185,7 +262,8 @@ async function renderPlantCard(plant) {
       </button>`
     : `<div class="plant-card-placeholder">${iconImg(ICONS.page.plants, "plant-card-placeholder-icon", "")}</div>`;
 
-  const plagaEnfermedad = (plant.plagaIds?.length || 0) + (plant.enfermedadIds?.length || 0);
+  const incidenceCount = (plant.plagaIds?.length || 0) + (plant.enfermedadIds?.length || 0);
+  const treatmentCount = countPlantTreatments(plant.id, allTreatments);
 
   return `
     <div class="col-sm-6 col-lg-4">
@@ -196,8 +274,23 @@ async function renderPlantCard(plant) {
           ${planta ? `<p class="small text-muted mb-1 fst-italic">${escapeHtml(planta.nombreLatin)}</p>` : ""}
           ${estado ? `<span class="badge badge-kawaii-green mb-2">${escapeHtml(estado.nombre)}</span>` : ""}
           ${container ? `<div class="small"><i class="bi bi-flower2"></i> ${escapeHtml(container.nombre)}</div>` : ""}
-          ${plagaEnfermedad ? `<div class="small text-danger mt-1"><i class="bi bi-bug"></i> ${plagaEnfermedad} incidencia(s)</div>` : ""}
-          ${planta?.toxicidadGatos ? `<div class="small mt-1">${renderToxicityBadge(planta.toxicidadGatos)}</div>` : ""}
+          <div class="d-flex flex-wrap gap-2 mt-2">
+            ${
+              incidenceCount
+                ? `<button type="button" class="badge badge-incidence border-0" data-plant-incidences="${plant.id}" aria-label="Ver incidencias">
+                    <i class="bi bi-bug"></i> ${incidenceCount} incidencia(s)
+                  </button>`
+                : ""
+            }
+            ${
+              treatmentCount
+                ? `<button type="button" class="badge badge-treatment border-0" data-plant-treatments="${plant.id}" aria-label="Ver tratamientos">
+                    ${iconImg(ICONS.page.treatments, "badge-treatment-icon", "")} ${treatmentCount} tratamiento(s)
+                  </button>`
+                : ""
+            }
+          </div>
+          ${planta?.toxicidadGatos ? `<div class="small mt-2">${renderToxicityBadge(planta.toxicidadGatos)}</div>` : ""}
         </div>
         <div class="card-footer bg-transparent border-0 d-flex gap-2 pb-3 px-3">
           <button class="btn btn-sm btn-kawaii-outline flex-fill" data-edit-plant="${plant.id}">Editar</button>
@@ -208,12 +301,11 @@ async function renderPlantCard(plant) {
 }
 
 export async function render() {
-  const plants = (await db.getAll("plants")).sort((a, b) =>
-    (b.updatedAt || "").localeCompare(a.updatedAt || "")
-  );
+  const [plants, allTreatments] = await Promise.all([db.getAll("plants"), db.getAll("treatments")]);
+  const sortedPlants = plants.sort((a, b) => (b.updatedAt || "").localeCompare(a.updatedAt || ""));
 
-  const cardsHtml = plants.length
-    ? `<div class="row g-3" id="plants-grid">${await Promise.all(plants.map(renderPlantCard)).then((h) => h.join(""))}</div>`
+  const cardsHtml = sortedPlants.length
+    ? `<div class="row g-3" id="plants-grid">${await Promise.all(sortedPlants.map((p) => renderPlantCard(p, allTreatments))).then((h) => h.join(""))}</div>`
     : emptyState(ICONS.page.plants, "Sin plantas registradas", "Añade tu primera planta del huerto");
 
   return `
@@ -228,7 +320,32 @@ export async function render() {
 }
 
 export function bindEvents(container) {
+  let treatmentsCache = null;
+  db.getAll("treatments").then((items) => {
+    treatmentsCache = items;
+  });
+
   container.querySelector("#add-plant-btn")?.addEventListener("click", () => openPlantModal());
+
+  container.addEventListener("click", async (e) => {
+    const incBtn = e.target.closest("[data-plant-incidences]");
+    if (incBtn) {
+      e.preventDefault();
+      const plant = await db.getById("plants", incBtn.dataset.plantIncidences);
+      if (plant) openIncidencesModal(plant);
+      return;
+    }
+
+    const treatBtn = e.target.closest("[data-plant-treatments]");
+    if (treatBtn) {
+      e.preventDefault();
+      const plant = await db.getById("plants", treatBtn.dataset.plantTreatments);
+      if (plant) {
+        const allTreatments = treatmentsCache || (await db.getAll("treatments"));
+        openPlantTreatmentsModal(plant, allTreatments);
+      }
+    }
+  });
 
   container.querySelectorAll("[data-edit-plant]").forEach((btn) => {
     btn.addEventListener("click", async () => {

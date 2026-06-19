@@ -40,32 +40,32 @@ export async function render() {
     ${pageHeader("Bienvenido a LozarGarden", "Tu compañero kawaii para cuidar el huerto", "", ICONS.logo)}
     <div class="row g-3 mb-4">
       <div class="col-6 col-md-3">
-        <div class="kawaii-card stat-card">
+        <a href="#plants" class="kawaii-card stat-card stat-card-link text-decoration-none text-reset" data-view="plants">
           <div class="stat-icon">${statIconImg("plants")}</div>
           <div class="stat-value">${plantCount}</div>
           <div class="stat-label">Plantas</div>
-        </div>
+        </a>
       </div>
       <div class="col-6 col-md-3">
-        <div class="kawaii-card stat-card">
+        <a href="#diary" class="kawaii-card stat-card stat-card-link text-decoration-none text-reset" data-view="diary">
           <div class="stat-icon">${statIconImg("diary")}</div>
           <div class="stat-value">${diaryCount}</div>
           <div class="stat-label">Entradas diario</div>
-        </div>
+        </a>
       </div>
       <div class="col-6 col-md-3">
-        <div class="kawaii-card stat-card">
+        <a href="#containers" class="kawaii-card stat-card stat-card-link text-decoration-none text-reset" data-view="containers">
           <div class="stat-icon">${statIconImg("containers")}</div>
           <div class="stat-value">${containerCount}</div>
           <div class="stat-label">Contenedores</div>
-        </div>
+        </a>
       </div>
       <div class="col-6 col-md-3">
-        <div class="kawaii-card stat-card">
+        <a href="#treatments" class="kawaii-card stat-card stat-card-link text-decoration-none text-reset" data-view="treatments">
           <div class="stat-icon">${statIconImg("treatments")}</div>
           <div class="stat-value">${treatmentCount}</div>
           <div class="stat-label">Tratamientos</div>
-        </div>
+        </a>
       </div>
     </div>
     <div class="row g-3">
