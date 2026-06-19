@@ -44,7 +44,8 @@
   padding: 0.55rem 0.75rem;
   font-weight: 600;
   font-size: 0.9rem;
-  background: #fff;
+  background: var(--kg-surface-solid);
+  color: var(--kg-text);
 }
 
 .macetadora-select:focus,
@@ -135,7 +136,7 @@
 }
 
 .macetadora-details {
-  background: rgba(255, 255, 255, 0.75);
+  background: var(--kg-surface-muted);
   border: 2px solid var(--kg-mint);
   border-radius: var(--kg-radius-sm);
   padding: 0.65rem 1rem;

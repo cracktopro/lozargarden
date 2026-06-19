@@ -23,15 +23,8 @@ const BASE = `${resolveBaseUrl()}icons`;
 export const ICONS = {
   favicon: `${BASE}/favicon.png`,
   logo: `${BASE}/logo.png`,
-  nav: {
-    dashboard: `${BASE}/logo.png`,
-    plants: `${BASE}/plantas_nav.png`,
-    diary: `${BASE}/diario_nav.png`,
-    containers: `${BASE}/macetas_nav.png`,
-    treatments: `${BASE}/tratamiento_nav.png`,
-    catalog: `${BASE}/catalogo_nav.png`,
-  },
   page: {
+    dashboard: `${BASE}/logo.png`,
     plants: `${BASE}/plantas.png`,
     diary: `${BASE}/diario.png`,
     containers: `${BASE}/macetas.png`,
@@ -63,7 +56,7 @@ export function iconImg(src, className = "app-icon", alt = "") {
 }
 
 export function navIconImg(viewId, label) {
-  const src = ICONS.nav[viewId];
+  const src = ICONS.page[viewId] || ICONS.logo;
   return iconImg(src, "nav-icon-img", label);
 }
 

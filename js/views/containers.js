@@ -3,7 +3,7 @@ import * as catalog from "../catalog.js";
 import { uid, nowISO, escapeHtml, CONTAINER_TYPES, debounce, formatCapacityDisplay } from "../utils.js";
 import {
   pageHeader, emptyState, searchInput, showModal, hideModal,
-  showToast, confirmDialog,
+  showToast, confirmDialog, renderPhotoUploadHtml, bindPhotoUpload, encodePhotoGallery,
 } from "../ui.js";
 import { ICONS, iconImg } from "../icons.js";
 import { renderMacetadoraHtml, initMacetadora } from "../macetadora.js";
@@ -15,6 +15,23 @@ const TABS = [
 
 let activeTab = "mis-macetas";
 let pendingNewContainer = null;
+let pendingPhotos = [];
+
+async function loadContainerPhotos(containerId) {
+  return db.getPhotosByOwner("container", containerId);
+}
+
+function bindContainerPhotos(containerId = null) {
+  pendingPhotos = [];
+  return bindPhotoUpload("container-photo-input", {
+    ownerType: "container",
+    ownerId: containerId,
+    getPhotos: () => pendingPhotos,
+    setPhotos: (photos) => {
+      pendingPhotos = photos;
+    },
+  });
+}
 
 function renderTabs() {
   return `
@@ -101,6 +118,10 @@ function containerFormHtml(container = null, allPlants = []) {
           <label class="form-label" for="container-notas">Notas</label>
           <textarea class="form-control" id="container-notas" rows="2">${escapeHtml(c.notas)}</textarea>
         </div>
+        <div class="col-12">
+          <label class="form-label">Fotos</label>
+          ${renderPhotoUploadHtml("container-photo-input")}
+        </div>
       </div>
     </form>`;
 }
@@ -162,7 +183,15 @@ async function openContainerModal(container = null, defaults = {}) {
     `
   );
 
+  const photoUpload = bindContainerPhotos(container?.id);
+
+  if (container) {
+    pendingPhotos = await loadContainerPhotos(container.id);
+    photoUpload.refresh();
+  }
+
   document.getElementById("save-container-btn").addEventListener("click", async () => {
+    const saveBtn = document.getElementById("save-container-btn");
     const nombre = document.getElementById("container-nombre").value.trim();
     if (!nombre) {
       showToast("El nombre es obligatorio", "error");
@@ -184,18 +213,29 @@ async function openContainerModal(container = null, defaults = {}) {
       updatedAt: nowISO(),
     };
 
-    await db.put("containers", data);
-    await syncPlantContainerAssignments(data.id, selectedPlantIds, container?.plantIds || []);
+    saveBtn.disabled = true;
+    try {
+      await db.put("containers", data);
+      await syncPlantContainerAssignments(data.id, selectedPlantIds, container?.plantIds || []);
+      await db.syncPhotosByOwner("container", data.id, pendingPhotos);
 
-    hideModal();
-    showToast(container ? "Contenedor actualizado" : "Contenedor creado");
-    document.dispatchEvent(new CustomEvent("view-refresh"));
+      hideModal();
+      showToast(container ? "Contenedor actualizado" : "Contenedor creado");
+      document.dispatchEvent(new CustomEvent("view-refresh"));
+    } catch (err) {
+      showToast(err.message || "Error al guardar el contenedor", "error");
+    } finally {
+      saveBtn.disabled = false;
+    }
   });
 }
 
 async function renderContainerCard(container) {
   const typeInfo = CONTAINER_TYPES.find((t) => t.id === container.tipo) || CONTAINER_TYPES[0];
-  const plants = (await db.getAll("plants")).filter((p) => p.containerId === container.id);
+  const [plants, photos] = await Promise.all([
+    db.getAll("plants").then((all) => all.filter((p) => p.containerId === container.id)),
+    loadContainerPhotos(container.id),
+  ]);
   const plantNames = await Promise.all(
     plants.map(async (p) => {
       const cat = await catalog.findPlantaById(p.catalogPlantId);
@@ -203,11 +243,18 @@ async function renderContainerCard(container) {
     })
   );
 
+  const imgHtml = photos.length
+    ? `<button type="button" class="plant-card-photo-btn w-100 border-0 p-0 bg-transparent" data-photo-gallery="${encodePhotoGallery(photos)}" data-photo-start="0" data-photo-title="${escapeHtml(container.nombre)}" aria-label="Ver fotos de ${escapeHtml(container.nombre)}">
+        <img src="${photos[0].dataUrl || photos[0].downloadUrl}" class="card-img-top plant-card-img" alt="">
+        ${photos.length > 1 ? `<span class="plant-card-photo-count"><i class="bi bi-images"></i> ${photos.length}</span>` : ""}
+      </button>`
+    : `<div class="plant-card-placeholder">${iconImg(typeInfo.icon, "container-type-icon-img", typeInfo.label)}</div>`;
+
   return `
     <div class="col-md-6 col-xl-4">
       <article class="kawaii-card h-100">
+        ${imgHtml}
         <div class="card-body text-center">
-          <div class="container-type-icon mb-2">${iconImg(typeInfo.icon, "container-type-icon-img", typeInfo.label)}</div>
           <h3 class="h5 fw-bold">${escapeHtml(container.nombre)}</h3>
           <span class="badge badge-kawaii mb-2">${escapeHtml(typeInfo.label)}</span>
           ${container.ubicacion ? `<p class="small mb-1"><i class="bi bi-geo-alt"></i> ${escapeHtml(container.ubicacion)}</p>` : ""}
@@ -289,6 +336,7 @@ export function bindEvents(container) {
           p.containerId = null;
           await db.put("plants", p);
         }
+        await db.deletePhotosByOwner("container", id);
         await db.remove("containers", id);
         showToast("Contenedor eliminado");
         document.dispatchEvent(new CustomEvent("view-refresh"));

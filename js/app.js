@@ -4,6 +4,7 @@ import { NAV_ITEMS } from "./utils.js";
 import { initCatalogs } from "./catalog.js";
 import { onAuthChange, logout, getCurrentUser } from "./auth.js";
 import { closeOffcanvasNav, showToast, bindPhotoGalleryClicks } from "./ui.js";
+import { initTheme, bindThemeToggle } from "./theme.js";
 import { navIconImg } from "./icons.js";
 import * as dashboard from "./views/dashboard.js";
 import * as plants from "./views/plants.js";
@@ -55,7 +56,13 @@ function buildNav(containerId) {
         </a>
       </li>`
     ).join("")}
-    <li class="nav-item mt-3 pt-3 border-top">
+    <li class="nav-item mt-3 pt-3 border-top border-theme">
+      <button type="button" class="nav-link w-100 text-start border-0 bg-transparent" data-theme-toggle aria-pressed="false" aria-label="Activar modo oscuro">
+        <i class="bi bi-moon-stars-fill" aria-hidden="true"></i>
+        <span data-theme-label>Modo oscuro</span>
+      </button>
+    </li>
+    <li class="nav-item">
       <div class="px-3 mb-2 small text-muted text-truncate" title="${userLabel}">${userLabel}</div>
       <button type="button" class="nav-link w-100 text-start border-0 bg-transparent" id="logout-btn">
         <i class="bi bi-box-arrow-right" aria-hidden="true"></i>
@@ -74,6 +81,8 @@ function buildNav(containerId) {
     await logout();
     showToast("Sesión cerrada");
   });
+
+  bindThemeToggle(el);
 }
 
 async function renderView(viewId) {
@@ -159,6 +168,7 @@ function bindGlobalEvents() {
 }
 
 function init() {
+  initTheme();
   bindGlobalEvents();
 
   onAuthChange(async (user) => {
