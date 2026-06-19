@@ -1,0 +1,25 @@
+[
+  {
+    "origin": [
+      "https://cracktopro.github.io",
+      "http://localhost:8080",
+      "http://127.0.0.1:8080"
+    ],
+    "method": ["GET", "HEAD", "PUT", "POST", "DELETE", "OPTIONS"],
+    "responseHeader": [
+      "Content-Type",
+      "Authorization",
+      "Content-Length",
+      "User-Agent",
+      "X-Requested-With",
+      "x-goog-resumable",
+      "x-goog-upload-command",
+      "x-goog-upload-header-content-length",
+      "x-goog-upload-header-content-type",
+      "x-goog-upload-offset",
+      "x-goog-upload-protocol",
+      "x-firebase-gmpid"
+    ],
+    "maxAgeSeconds": 3600
+  }
+]

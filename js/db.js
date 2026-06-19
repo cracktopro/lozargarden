@@ -13,7 +13,7 @@ import {
 } from "firebase/firestore";
 import {
   ref as storageRef,
-  uploadString,
+  uploadBytes,
   getDownloadURL,
   deleteObject,
 } from "firebase/storage";
@@ -68,14 +68,43 @@ function normalizePhoto(photo) {
   };
 }
 
+function dataUrlToBlob(dataUrl) {
+  const [header, base64] = dataUrl.split(",");
+  const mime = header.match(/data:(.*?);/)?.[1] || "image/jpeg";
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return new Blob([bytes], { type: mime });
+}
+
+function storageUploadError(err) {
+  const code = err?.code || "";
+  if (code === "storage/unauthorized") {
+    return "Sin permiso para subir fotos. Revisa storage.rules en Firebase.";
+  }
+  if (code === "storage/unauthenticated") {
+    return "Sesión caducada. Vuelve a iniciar sesión.";
+  }
+  const msg = String(err?.message || err);
+  if (/cors|network|failed|fetch|retry-limit/i.test(msg) || code === "storage/unknown" || code === "storage/retry-limit-exceeded") {
+    return "No se pudo subir la foto: falta configurar CORS en el bucket de Storage (ver storage.cors.json y CONTEXT.md).";
+  }
+  return `Error al subir la foto: ${msg}`;
+}
+
 async function uploadPhotoData(item) {
   const user = requireUser();
   const path = `users/${user.uid}/photos/${item.id}`;
   const ref = storageRef(storage, path);
-  await uploadString(ref, item.dataUrl, "data_url");
-  const downloadUrl = await getDownloadURL(ref);
-  const { dataUrl, ...meta } = item;
-  return { ...meta, storagePath: path, downloadUrl };
+  try {
+    const blob = dataUrlToBlob(item.dataUrl);
+    await uploadBytes(ref, blob, { contentType: item.mimeType || blob.type || "image/jpeg" });
+    const downloadUrl = await getDownloadURL(ref);
+    const { dataUrl, ...meta } = item;
+    return { ...meta, storagePath: path, downloadUrl };
+  } catch (err) {
+    throw new Error(storageUploadError(err));
+  }
 }
 
 async function deleteStorageFile(storagePath) {

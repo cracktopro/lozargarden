@@ -45,6 +45,13 @@ URL de producción: **https://cracktopro.github.io/lozargarden/**
    - Publica el contenido de `dist/`
 4. Activa Auth, Firestore y Storage en Firebase
 5. En Firebase Console → Authentication → **Authorized domains** → añade `cracktopro.github.io`
+6. **Storage CORS (obligatorio para subir fotos desde GitHub Pages):** el bucket de Google Cloud debe permitir peticiones desde tu dominio. En [Google Cloud Console](https://console.cloud.google.com/) → Cloud Storage → bucket `lozargarden.firebasestorage.app` → abre **Cloud Shell** (icono terminal arriba a la derecha) y ejecuta:
+
+```bash
+gcloud storage buckets update gs://lozargarden.firebasestorage.app --cors-file=storage.cors.json
+```
+
+(Si no tienes el archivo en Cloud Shell, súbelo o pega el contenido de `storage.cors.json` del repo.) Solo hace falta una vez. Sin esto, la subida de fotos falla con error CORS en la consola del navegador.
 
 ### Rutas de assets en GitHub Pages
 
@@ -80,6 +87,7 @@ Lozargarden/
 ├── vite.config.js
 ├── firestore.rules
 ├── storage.rules
+├── storage.cors.json       # CORS del bucket (aplicar una vez con gcloud)
 ├── CONTEXT.md
 ├── .github/workflows/deploy-pages.yml   # CI: build + deploy a GitHub Pages
 ├── public/
@@ -192,6 +200,7 @@ Rutas por hash: `#dashboard`, `#plants`, `#diary`, `#containers`, `#treatments`,
 | 2025-06-19 | Migración a Firebase Auth + Firestore + Storage, Vite, login |
 | 2025-06-19 | Fotos: IndexedDB temporal → Firebase Storage (plan Blaze) |
 | 2025-06-19 | Deploy en GitHub Pages: base `/lozargarden/`, rutas de iconos con `BASE_URL`, workflow Actions |
+| 2025-06-19 | Fotos: botones Cámara/Galería; CORS en Storage para GitHub Pages; errores visibles al guardar |
 
 ## Depuración
 

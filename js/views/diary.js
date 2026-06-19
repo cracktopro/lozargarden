@@ -63,6 +63,7 @@ async function openDiaryModal(entry = null) {
   }
 
   document.getElementById("save-diary-btn").addEventListener("click", async () => {
+    const saveBtn = document.getElementById("save-diary-btn");
     const fecha = document.getElementById("diary-fecha").value;
     const hora = document.getElementById("diary-hora").value;
     const detalle = document.getElementById("diary-detalle").value.trim();
@@ -80,17 +81,24 @@ async function openDiaryModal(entry = null) {
       updatedAt: nowISO(),
     };
 
-    await db.put("diary", data);
+    saveBtn.disabled = true;
+    try {
+      await db.put("diary", data);
 
-    if (entry) await db.deletePhotosByOwner("diary", entry.id);
-    for (const photo of pendingPhotos) {
-      photo.ownerId = data.id;
-      await db.put("photos", photo);
+      if (entry) await db.deletePhotosByOwner("diary", entry.id);
+      for (const photo of pendingPhotos) {
+        photo.ownerId = data.id;
+        await db.put("photos", photo);
+      }
+
+      hideModal();
+      showToast(entry ? "Entrada actualizada" : "Entrada añadida al diario");
+      document.dispatchEvent(new CustomEvent("view-refresh"));
+    } catch (err) {
+      showToast(err.message || "Error al guardar la entrada", "error");
+    } finally {
+      saveBtn.disabled = false;
     }
-
-    hideModal();
-    showToast(entry ? "Entrada actualizada" : "Entrada añadida al diario");
-    document.dispatchEvent(new CustomEvent("view-refresh"));
   });
 }
 

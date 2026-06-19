@@ -125,6 +125,7 @@ async function openPlantModal(plant = null) {
   }
 
   document.getElementById("save-plant-btn").addEventListener("click", async () => {
+    const saveBtn = document.getElementById("save-plant-btn");
     const catalogPlantId = document.getElementById("plant-catalog").value;
     const estadoId = document.getElementById("plant-estado").value;
     if (!catalogPlantId || !estadoId) {
@@ -148,17 +149,24 @@ async function openPlantModal(plant = null) {
       updatedAt: nowISO(),
     };
 
-    await db.put("plants", data);
+    saveBtn.disabled = true;
+    try {
+      await db.put("plants", data);
 
-    if (plant) await db.deletePhotosByOwner("plant", plant.id);
-    for (const photo of pendingPhotos) {
-      photo.ownerId = data.id;
-      await db.put("photos", photo);
+      if (plant) await db.deletePhotosByOwner("plant", plant.id);
+      for (const photo of pendingPhotos) {
+        photo.ownerId = data.id;
+        await db.put("photos", photo);
+      }
+
+      hideModal();
+      showToast(plant ? "Planta actualizada" : "Planta añadida al huerto");
+      document.dispatchEvent(new CustomEvent("view-refresh"));
+    } catch (err) {
+      showToast(err.message || "Error al guardar la planta", "error");
+    } finally {
+      saveBtn.disabled = false;
     }
-
-    hideModal();
-    showToast(plant ? "Planta actualizada" : "Planta añadida al huerto");
-    document.dispatchEvent(new CustomEvent("view-refresh"));
   });
 }
 
