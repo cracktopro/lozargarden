@@ -4,7 +4,7 @@ import { uid, nowISO, escapeHtml, debounce, isToxicForCats } from "../utils.js";
 import {
   pageHeader, emptyState, searchInput, showModal, hideModal,
   showToast, confirmDialog, multiSelectOptions, renderPhotoUploadHtml,
-  readFilesAsPhotos, renderPhotoThumbs,
+  bindPhotoUpload,
 } from "../ui.js";
 import { ICONS, iconImg } from "../icons.js";
 
@@ -89,20 +89,13 @@ function plantFormHtml(plant = null, catalogPlantas, estados, plagas, enfermedad
 
 function bindPlantForm(plantId = null) {
   pendingPhotos = [];
-  const input = document.getElementById("plant-photo-input");
-  const preview = document.getElementById("plant-photo-input-preview");
-
-  input?.addEventListener("change", async (e) => {
-    const newPhotos = await readFilesAsPhotos(e.target.files, "plant", plantId || "temp");
-    pendingPhotos.push(...newPhotos);
-    preview.innerHTML = renderPhotoThumbs(pendingPhotos, true);
-    preview.querySelectorAll("[data-photo-id]").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        pendingPhotos = pendingPhotos.filter((p) => p.id !== btn.dataset.photoId);
-        preview.innerHTML = renderPhotoThumbs(pendingPhotos, true);
-      });
-    });
-    input.value = "";
+  return bindPhotoUpload("plant-photo-input", {
+    ownerType: "plant",
+    ownerId: plantId,
+    getPhotos: () => pendingPhotos,
+    setPhotos: (photos) => {
+      pendingPhotos = photos;
+    },
   });
 }
 
@@ -124,12 +117,11 @@ async function openPlantModal(plant = null) {
     `
   );
 
-  bindPlantForm(plant?.id);
+  const photoUpload = bindPlantForm(plant?.id);
 
   if (plant) {
-    const existing = await loadPlantPhotos(plant.id);
-    pendingPhotos = [...existing];
-    document.getElementById("plant-photo-input-preview").innerHTML = renderPhotoThumbs(pendingPhotos, true);
+    pendingPhotos = await loadPlantPhotos(plant.id);
+    photoUpload.refresh();
   }
 
   document.getElementById("save-plant-btn").addEventListener("click", async () => {

@@ -101,14 +101,61 @@ export function multiSelectOptions(items, selectedIds = [], labelKey = "nombre")
     .join("");
 }
 
-export function renderPhotoUploadHtml(inputId, hint = "Toca para añadir foto (se optimiza automáticamente)") {
+export function renderPhotoUploadHtml(baseId) {
   return `
-    <div class="photo-upload-zone position-relative mb-3" role="button" tabindex="0" onclick="document.getElementById('${inputId}').click()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();document.getElementById('${inputId}').click();}">
-      <input type="file" id="${inputId}" accept="image/*" capture="environment" multiple aria-label="Subir fotos">
-      <i class="bi bi-camera fs-2 text-success d-block mb-2" aria-hidden="true"></i>
-      <span class="fw-semibold">${escapeHtml(hint)}</span>
+    <div class="photo-upload-actions d-flex gap-2 mb-2">
+      <button type="button" class="btn btn-kawaii flex-fill" id="${baseId}-btn-camera" aria-label="Hacer foto con la cámara">
+        <i class="bi bi-camera me-1" aria-hidden="true"></i>Cámara
+      </button>
+      <button type="button" class="btn btn-kawaii-outline flex-fill" id="${baseId}-btn-gallery" aria-label="Elegir fotos de la galería">
+        <i class="bi bi-images me-1" aria-hidden="true"></i>Galería
+      </button>
+      <input type="file" id="${baseId}-camera" accept="image/*" capture="environment" class="visually-hidden" aria-hidden="true" tabindex="-1">
+      <input type="file" id="${baseId}-gallery" accept="image/*" multiple class="visually-hidden" aria-hidden="true" tabindex="-1">
     </div>
-    <div id="${inputId}-preview" class="d-flex flex-wrap gap-2"></div>`;
+    <p class="form-text mb-3">Las fotos se optimizan automáticamente al subirlas.</p>
+    <div id="${baseId}-preview" class="d-flex flex-wrap gap-2"></div>`;
+}
+
+export function bindPhotoUpload(baseId, { ownerType, ownerId, getPhotos, setPhotos }) {
+  const cameraInput = document.getElementById(`${baseId}-camera`);
+  const galleryInput = document.getElementById(`${baseId}-gallery`);
+  const preview = document.getElementById(`${baseId}-preview`);
+
+  function renderPreview() {
+    if (!preview) return;
+    preview.innerHTML = renderPhotoThumbs(getPhotos(), true);
+    preview.querySelectorAll("[data-photo-id]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        setPhotos(getPhotos().filter((p) => p.id !== btn.dataset.photoId));
+        renderPreview();
+      });
+    });
+  }
+
+  async function handleFiles(files) {
+    if (!files?.length) return;
+    const newPhotos = await readFilesAsPhotos(files, ownerType, ownerId || "temp");
+    if (!newPhotos.length) return;
+    setPhotos([...getPhotos(), ...newPhotos]);
+    renderPreview();
+  }
+
+  cameraInput?.addEventListener("change", async (e) => {
+    await handleFiles(e.target.files);
+    e.target.value = "";
+  });
+
+  galleryInput?.addEventListener("change", async (e) => {
+    await handleFiles(e.target.files);
+    e.target.value = "";
+  });
+
+  document.getElementById(`${baseId}-btn-camera`)?.addEventListener("click", () => cameraInput?.click());
+  document.getElementById(`${baseId}-btn-gallery`)?.addEventListener("click", () => galleryInput?.click());
+
+  renderPreview();
+  return { refresh: renderPreview };
 }
 
 export async function readFilesAsPhotos(files, ownerType, ownerId, { onProgress } = {}) {

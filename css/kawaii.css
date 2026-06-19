@@ -469,6 +469,19 @@ body::before {
   transform: scale(1.05);
 }
 
+.photo-upload-actions .btn {
+  min-height: 2.75rem;
+}
+
+.photo-upload-actions input[type="file"] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
 .photo-upload-zone {
   border: 2px dashed var(--kg-green-deep);
   border-radius: var(--kg-radius);
@@ -711,7 +724,8 @@ body::before {
   .sidebar,
   .app-header,
   .btn,
-  .photo-upload-zone {
+  .photo-upload-zone,
+  .photo-upload-actions {
     display: none !important;
   }
 

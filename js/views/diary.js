@@ -2,7 +2,7 @@ import * as db from "../db.js";
 import { uid, nowISO, todayDate, nowTime, formatDate, formatDateTime, escapeHtml, debounce } from "../utils.js";
 import {
   pageHeader, emptyState, searchInput, showModal, hideModal,
-  showToast, confirmDialog, renderPhotoUploadHtml, readFilesAsPhotos, renderPhotoThumbs,
+  showToast, confirmDialog, renderPhotoUploadHtml, bindPhotoUpload, renderPhotoThumbs,
 } from "../ui.js";
 import { ICONS } from "../icons.js";
 
@@ -35,20 +35,13 @@ function diaryFormHtml(entry = null) {
 
 function bindDiaryPhotos(entryId = null) {
   pendingPhotos = [];
-  const input = document.getElementById("diary-photo-input");
-  const preview = document.getElementById("diary-photo-input-preview");
-
-  input?.addEventListener("change", async (e) => {
-    const newPhotos = await readFilesAsPhotos(e.target.files, "diary", entryId || "temp");
-    pendingPhotos.push(...newPhotos);
-    preview.innerHTML = renderPhotoThumbs(pendingPhotos, true);
-    preview.querySelectorAll("[data-photo-id]").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        pendingPhotos = pendingPhotos.filter((p) => p.id !== btn.dataset.photoId);
-        preview.innerHTML = renderPhotoThumbs(pendingPhotos, true);
-      });
-    });
-    input.value = "";
+  return bindPhotoUpload("diary-photo-input", {
+    ownerType: "diary",
+    ownerId: entryId,
+    getPhotos: () => pendingPhotos,
+    setPhotos: (photos) => {
+      pendingPhotos = photos;
+    },
   });
 }
 
@@ -62,11 +55,11 @@ async function openDiaryModal(entry = null) {
     `
   );
 
-  bindDiaryPhotos(entry?.id);
+  const photoUpload = bindDiaryPhotos(entry?.id);
 
   if (entry) {
     pendingPhotos = await db.getPhotosByOwner("diary", entry.id);
-    document.getElementById("diary-photo-input-preview").innerHTML = renderPhotoThumbs(pendingPhotos, true);
+    photoUpload.refresh();
   }
 
   document.getElementById("save-diary-btn").addEventListener("click", async () => {
