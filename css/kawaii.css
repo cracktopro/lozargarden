@@ -597,6 +597,84 @@ body::before {
   transform: scale(1.05);
 }
 
+.photo-thumb-btn {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: zoom-in;
+  border-radius: var(--kg-radius-sm);
+  line-height: 0;
+}
+
+.photo-thumb-btn:focus-visible {
+  outline: 2px solid var(--kg-pink-deep);
+  outline-offset: 2px;
+}
+
+.plant-card-photo-btn {
+  position: relative;
+  display: block;
+  cursor: zoom-in;
+}
+
+.plant-card-photo-btn:focus-visible {
+  outline: 2px solid var(--kg-pink-deep);
+  outline-offset: 2px;
+}
+
+.plant-card-photo-count {
+  position: absolute;
+  bottom: 0.5rem;
+  right: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(74, 85, 104, 0.78);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.photo-gallery-modal .modal-body {
+  background: linear-gradient(180deg, #2d3748 0%, #1a202c 100%);
+}
+
+.photo-gallery-modal .modal-header {
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.photo-gallery-img {
+  max-height: min(75vh, 720px);
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+.photo-gallery-modal .carousel-item {
+  min-height: min(75vh, 720px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem;
+}
+
+.photo-gallery-modal .carousel-control-prev,
+.photo-gallery-modal .carousel-control-next {
+  width: 10%;
+}
+
+.photo-gallery-modal .carousel-control-prev-icon,
+.photo-gallery-modal .carousel-control-next-icon {
+  filter: drop-shadow(0 0 6px rgba(0, 0, 0, 0.65));
+}
+
+.photo-gallery-counter {
+  color: rgba(255, 255, 255, 0.75);
+  background: rgba(0, 0, 0, 0.2);
+}
+
 .photo-upload-actions .btn {
   min-height: 2.75rem;
 }

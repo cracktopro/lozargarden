@@ -5,6 +5,79 @@ import { compressImageFile, formatBytes } from "./image-utils.js";
 import { iconImg } from "./icons.js";
 
 let modalInstance = null;
+let photoGalleryModalInstance = null;
+let photoGallerySlideHandler = null;
+
+export function encodePhotoGallery(photos) {
+  const urls = photos.map((p) => p.dataUrl || p.downloadUrl || "").filter(Boolean);
+  return encodeURIComponent(JSON.stringify(urls));
+}
+
+export function openPhotoGallery(sources, startIndex = 0, title = "Fotos") {
+  const urls = (Array.isArray(sources) ? sources : []).filter(Boolean);
+  if (!urls.length) return;
+
+  const inner = document.getElementById("photoGalleryInner");
+  const counter = document.getElementById("photoGalleryCounter");
+  const carouselEl = document.getElementById("photoGalleryCarousel");
+  const prevBtn = carouselEl?.querySelector(".carousel-control-prev");
+  const nextBtn = carouselEl?.querySelector(".carousel-control-next");
+  const safeStart = Math.min(Math.max(startIndex, 0), urls.length - 1);
+
+  document.getElementById("photoGalleryLabel").textContent = title;
+
+  inner.innerHTML = urls
+    .map(
+      (src, i) => `
+    <div class="carousel-item${i === safeStart ? " active" : ""}">
+      <img src="${escapeHtml(src)}" class="d-block mx-auto photo-gallery-img" alt="Foto ${i + 1} de ${urls.length}">
+    </div>`
+    )
+    .join("");
+
+  const showNav = urls.length > 1;
+  prevBtn?.classList.toggle("d-none", !showNav);
+  nextBtn?.classList.toggle("d-none", !showNav);
+  counter.classList.toggle("d-none", !showNav);
+  counter.textContent = showNav ? `${safeStart + 1} / ${urls.length}` : "";
+
+  bootstrap.Carousel.getInstance(carouselEl)?.dispose();
+  const carousel = new bootstrap.Carousel(carouselEl, { interval: false, wrap: true, touch: true });
+
+  if (photoGallerySlideHandler) {
+    carouselEl.removeEventListener("slid.bs.carousel", photoGallerySlideHandler);
+  }
+  photoGallerySlideHandler = () => {
+    const active = inner.querySelector(".carousel-item.active");
+    const idx = active ? [...inner.children].indexOf(active) : 0;
+    counter.textContent = `${idx + 1} / ${urls.length}`;
+  };
+  carouselEl.addEventListener("slid.bs.carousel", photoGallerySlideHandler);
+
+  if (safeStart > 0) carousel.to(safeStart);
+
+  const modalEl = document.getElementById("photoGalleryModal");
+  if (!photoGalleryModalInstance) photoGalleryModalInstance = new bootstrap.Modal(modalEl);
+  photoGalleryModalInstance.show();
+}
+
+export function bindPhotoGalleryClicks(container) {
+  container.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-photo-gallery]");
+    if (!btn) return;
+    e.preventDefault();
+    const raw = btn.getAttribute("data-photo-gallery");
+    if (!raw) return;
+    try {
+      const urls = JSON.parse(decodeURIComponent(raw));
+      const start = parseInt(btn.getAttribute("data-photo-start") || "0", 10);
+      const title = btn.getAttribute("data-photo-title") || "Fotos";
+      openPhotoGallery(urls, start, title);
+    } catch (err) {
+      console.warn("No se pudo abrir la galería:", err);
+    }
+  });
+}
 
 export function showToast(message, type = "success") {
   const container = document.getElementById("toast-container");
@@ -274,14 +347,26 @@ export async function readFilesAsPhotos(files, ownerType, ownerId, { onProgress 
   return photos;
 }
 
-export function renderPhotoThumbs(photos, onDelete = null) {
+export function renderPhotoThumbs(photos, onDelete = null, { gallery = false, galleryTitle = "Fotos" } = {}) {
   if (!photos.length) return "";
+  const encoded = gallery ? encodePhotoGallery(photos) : "";
+  const safeTitle = escapeHtml(galleryTitle);
+
   return photos
-    .map((p) => {
+    .map((p, index) => {
       const src = p.dataUrl || p.downloadUrl || "";
+      const img = `<img src="${src}" alt="Foto" class="photo-thumb" loading="lazy">`;
+
+      if (gallery && !onDelete) {
+        return `
+    <button type="button" class="photo-thumb-btn" data-photo-gallery="${encoded}" data-photo-start="${index}" data-photo-title="${safeTitle}" aria-label="Ver foto ${index + 1} de ${photos.length}">
+      ${img}
+    </button>`;
+      }
+
       return `
     <div class="position-relative d-inline-block">
-      <img src="${src}" alt="Foto" class="photo-thumb" loading="lazy">
+      ${img}
       ${
         onDelete
           ? `<button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 rounded-circle p-0" style="width:22px;height:22px;font-size:10px;line-height:1" data-photo-id="${p.id}" aria-label="Eliminar foto">&times;</button>`

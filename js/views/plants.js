@@ -5,7 +5,7 @@ import {
   pageHeader, emptyState, searchInput, showModal, hideModal,
   showToast, confirmDialog, renderPhotoUploadHtml,
   renderSearchablePickerHtml, bindSearchablePicker, getSearchablePickerValues,
-  bindPhotoUpload,
+  bindPhotoUpload, encodePhotoGallery,
 } from "../ui.js";
 import { ICONS, iconImg } from "../icons.js";
 
@@ -184,7 +184,10 @@ async function renderPlantCard(plant) {
   const { planta, estado, container, photos } = await getPlantCardData(plant);
   const displayName = plant.apodo || planta?.nombre || "Planta sin nombre";
   const imgHtml = photos.length
-    ? `<img src="${photos[0].dataUrl}" class="card-img-top plant-card-img" alt="">`
+    ? `<button type="button" class="plant-card-photo-btn w-100 border-0 p-0 bg-transparent" data-photo-gallery="${encodePhotoGallery(photos)}" data-photo-start="0" data-photo-title="${escapeHtml(displayName)}" aria-label="Ver fotos de ${escapeHtml(displayName)}">
+        <img src="${photos[0].dataUrl || photos[0].downloadUrl}" class="card-img-top plant-card-img" alt="">
+        ${photos.length > 1 ? `<span class="plant-card-photo-count"><i class="bi bi-images"></i> ${photos.length}</span>` : ""}
+      </button>`
     : `<div class="plant-card-placeholder">${iconImg(ICONS.page.plants, "plant-card-placeholder-icon", "")}</div>`;
 
   const plagaEnfermedad = (plant.plagaIds?.length || 0) + (plant.enfermedadIds?.length || 0);

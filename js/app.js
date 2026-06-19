@@ -3,7 +3,7 @@
 import { NAV_ITEMS } from "./utils.js";
 import { initCatalogs } from "./catalog.js";
 import { onAuthChange, logout, getCurrentUser } from "./auth.js";
-import { closeOffcanvasNav, showToast } from "./ui.js";
+import { closeOffcanvasNav, showToast, bindPhotoGalleryClicks } from "./ui.js";
 import { navIconImg } from "./icons.js";
 import * as dashboard from "./views/dashboard.js";
 import * as plants from "./views/plants.js";
@@ -148,6 +148,9 @@ function bindGlobalEvents() {
       navigateTo(btn.dataset.view);
     }
   });
+
+  const viewContainer = document.getElementById("view-container");
+  if (viewContainer) bindPhotoGalleryClicks(viewContainer);
 
   window.addEventListener("hashchange", () => {
     const h = window.location.hash.replace("#", "");

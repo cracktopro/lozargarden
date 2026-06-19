@@ -110,7 +110,7 @@ async function renderEntry(entry) {
         <div>
           <div class="timeline-date">${escapeHtml(formatDateTime(entry.fecha, entry.hora))}</div>
           <p class="mb-2 mt-1">${escapeHtml(entry.detalle)}</p>
-          ${photos.length ? `<div class="d-flex flex-wrap gap-2">${renderPhotoThumbs(photos)}</div>` : ""}
+          ${photos.length ? `<div class="d-flex flex-wrap gap-2">${renderPhotoThumbs(photos, null, { gallery: true, galleryTitle: formatDateTime(entry.fecha, entry.hora) })}</div>` : ""}
         </div>
         <div class="d-flex gap-1 flex-shrink-0">
           <button class="btn btn-sm btn-kawaii-outline" data-edit-diary="${entry.id}" aria-label="Editar"><i class="bi bi-pencil"></i></button>
