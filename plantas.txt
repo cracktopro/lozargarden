@@ -1,135 +1,135 @@
-Acelga;Beta vulgaris var. cicla;No tóxico
+Acelga;Beta vulgaris var. cicla;Seguro
 Ajo;Allium sativum;Tóxico
-Albahaca;Ocimum basilicum;No tóxico
+Albahaca;Ocimum basilicum;Seguro
 Albaricoquero;Prunus armeniaca;Tóxico
-Alcachofa;Cynara cardunculus var. scolymus;No tóxico
-Alegoría de la casa (Alegría);Impatiens walleriana;No tóxico
+Alcachofa;Cynara cardunculus var. scolymus;Seguro
+Alegoría de la casa (Alegría);Impatiens walleriana;Seguro
 Almendro;Prunus dulcis;Tóxico
 Aloe vera;Aloe vera;Tóxico
-Apio;Apium graveolens;No tóxico
-Arándano;Vaccinium myrtillus;No tóxico
-Arce japonés;Acer palmatum;No tóxico
+Apio;Apium graveolens;Seguro
+Arándano;Vaccinium myrtillus;Seguro
+Arce japonés;Acer palmatum;Seguro
 Aromática de San Juan (Hipérico);Hypericum perforatum;Tóxico
-Arroz;Oryza sativa;No tóxico
-As pidistra;Aspidistra elatior;No tóxico
+Arroz;Oryza sativa;Seguro
+As pidistra;Aspidistra elatior;Seguro
 Berenjena;Solanum melongena;Tóxico
 Boj;Buxus sempervirens;Tóxico
-Bougainvillea (Buganvilla);Bougainvillea glabra;No tóxico
-Calabacín;Cucurbita pepo;No tóxico
-Calabaza;Cucurbita maxima;No tóxico
-Caléndula;Calendula officinalis;No tóxico
-Camelia;Camellia japonesa;No tóxico
-Capuchina;Tropaeolum majus;No tóxico
+Bougainvillea (Buganvilla);Bougainvillea glabra;Seguro
+Calabacín;Cucurbita pepo;Seguro
+Calabaza;Cucurbita maxima;Seguro
+Caléndula;Calendula officinalis;Seguro
+Camelia;Camellia japonesa;Seguro
+Capuchina;Tropaeolum majus;Seguro
 Cebolla;Allium cepa;Tóxico
 Cerezo;Prunus avium;Tóxico
-Cinta;Chlorophytum comosum;No tóxico
+Cinta;Chlorophytum comosum;Seguro
 Ciprés;Cupressus sempervirens;Tóxico
 Ciruelo;Prunus domestica;Tóxico
 Clavel;Dianthus caryophyllus;Tóxico
-Culantro (Cilantro);Coriandrum sativum;No tóxico
-Col de Bruselas;Brassica oleracea var. gemmifera;No tóxico
-Coliflor;Brassica oleracea var. botrytis;No tóxico
+Culantro (Cilantro);Coriandrum sativum;Seguro
+Col de Bruselas;Brassica oleracea var. gemmifera;Seguro
+Coliflor;Brassica oleracea var. botrytis;Seguro
 Crisantemo;Chrysanthemum morifolium;Tóxico
 Dalia;Dahlia pinnata;Tóxico
 Don Diego de noche;Mirabilis jalapa;Tóxico
-Eneldo;Anethum graveolens;No tóxico
+Eneldo;Anethum graveolens;Seguro
 Espárrago;Asparagus officinalis;Tóxico
-Espinaca;Spinacia oleracea;No tóxico
+Espinaca;Spinacia oleracea;Seguro
 Falsa pimienta;Schinus molle;Tóxico
 Filodendro (Costilla de Adán);Monstera deliciosa;Tóxico
-Fresa;Fragaria vesca;No tóxico
-Fucsia (Pendientes de la reina);Fuchsia magellanica;No tóxico
-Garbanzo;Cicer arietinum;No tóxico
+Fresa;Fragaria vesca;Seguro
+Fucsia (Pendientes de la reina);Fuchsia magellanica;Seguro
+Garbanzo;Cicer arietinum;Seguro
 Geranio;Pelargonium zonale;Tóxico
-Girasol;Helianthus annuus;No tóxico
+Girasol;Helianthus annuus;Seguro
 Gitanilla;Pelargonium peltatum;Tóxico
 Glicinia;Wisteria sinensis;Tóxico
-Granado;Punica granatum;No tóxico
-Habas;Vicia faba;No tóxico
-Helecho común;Nephrolepis exaltata;No tóxico
+Granado;Punica granatum;Seguro
+Habas;Vicia faba;Seguro
+Helecho común;Nephrolepis exaltata;Seguro
 Hiedra;Hedera helix;Tóxico
 Higuera;Ficus carica;Tóxico
 Hinojo;Foeniculum vulgare;Tóxico
 Hortensia;Hydrangea macrophylla;Tóxico
 Jacinto;Hyanthus orientalis;Tóxico
-Jazmín común;Jasminum officinale;No tóxico
-Judía verde (Alubia);Phaseolus vulgaris;No tóxico
+Jazmín común;Jasminum officinale;Seguro
+Judía verde (Alubia);Phaseolus vulgaris;Seguro
 Laurel;Laurus nobilis;Tóxico
-Lechuga;Lactuca sativa;No tóxico
-Lenteja;Lens culinaris;No tóxico
-Lilo;Syringa vulgaris;No tóxico
+Lechuga;Lactuca sativa;Seguro
+Lenteja;Lens culinaris;Seguro
+Lilo;Syringa vulgaris;Seguro
 Limón (Limonero);Citrus limon;Tóxico
 Lino;Linum usitatissimum;Tóxico
 Madreselva;Lonicera japonica;Tóxico
-Maíz;Zea mays;No tóxico
-Malva;Malva sylvestris;No tóxico
+Maíz;Zea mays;Seguro
+Malva;Malva sylvestris;Seguro
 Manzano;Malus domestica;Tóxico
 Manzanilla;Matricaria chamomilla;Tóxico
 Melocotón (Melocotonero);Prunus persica;Tóxico
-Melón;Cucumis melo;No tóxico
+Melón;Cucumis melo;Seguro
 Menta;Mentha spicata;Tóxico
-Mirasol (Cosmos);Cosmos bipinnatus;No tóxico
+Mirasol (Cosmos);Cosmos bipinnatus;Seguro
 Naranjo dulce;Citrus sinensis;Tóxico
 Nectarina;Prunus persica var. nuciperasica;Tóxico
 Níspero;Eriobotrya japonesa;Tóxico
-Olivo;Olea europaea;No tóxico
-Olmo;Ulmus minor;No tóxico
+Olivo;Olea europaea;Seguro
+Olmo;Ulmus minor;Seguro
 Orégano;Origanum vulgare;Tóxico
-Ortiga;Urtica dioica;No tóxico
-Palmera canaria;Phoenix canariensis;No tóxico
+Ortiga;Urtica dioica;Seguro
+Palmera canaria;Phoenix canariensis;Seguro
 Patata;Solanum tuberosum;Tóxico
-Pelo de ángel (Calabaza confitera);Cucurbita ficifolia;No tóxico
-Pepino;Cucumis sativus;No tóxico
+Pelo de ángel (Calabaza confitera);Cucurbita ficifolia;Seguro
+Pepino;Cucumis sativus;Seguro
 Peral;Pyrus communis;Tóxico
 Perejil;Petroselinum crispum;Tóxico
-Petunia;Petunia hybrida;No tóxico
-Pimiento;Capsicum annuum;No tóxico
-Pino carrasco;Pinus halepensis;No tóxico
-Pino piñonero;Pinus pinea;No tóxico
+Petunia;Petunia hybrida;Seguro
+Pimiento;Capsicum annuum;Seguro
+Pino carrasco;Pinus halepensis;Seguro
+Pino piñonero;Pinus pinea;Seguro
 Pita (Agave);Agave americana;Tóxico
 Poto;Epipremnum aureum;Tóxico
 Puerro;Allium ampeloprasum var. porrum;Tóxico
-Rábano;Raphanus sativus;No tóxico
+Rábano;Raphanus sativus;Seguro
 Retama;Retama sphaerocarpa;Tóxico
-Romero;Salvia rosmarinus;No tóxico
-Rosal;Rosa gallica;No tóxico
+Romero;Salvia rosmarinus;Seguro
+Rosal;Rosa gallica;Seguro
 Ruda;Ruta graveolens;Tóxico
-Salvia;Salvia officinalis;No tóxico
-Sandía;Citrullus lanatus;No tóxico
+Salvia;Salvia officinalis;Seguro
+Sandía;Citrullus lanatus;Seguro
 Tomate;Solanum lycopersicum;Tóxico
-Tomillo;Thymus vulgaris;No tóxico
+Tomillo;Thymus vulgaris;Seguro
 Trébol;Trifolium repens;Tóxico
 Tulipán;Tulipa gesneriana;Tóxico
 Uva (Vid);Vitis vinifera;Tóxico
 Yuca;Yucca aloifolia;Tóxico
-Zanahoria;Daucus carota;No tóxico
-Zinnia;Zinnia elegans;No tóxico
-Frambueso;Rubus idaeus;No tóxico
-Grosellero negro;Ribes nigrum;No tóxico
-Grosellero rojo;Ribes rubrum;No tóxico
-Zarzamora;Rubus fruticosus;No tóxico
-Arándano rojo;Vaccinium macrocarpon;No tóxico
+Zanahoria;Daucus carota;Seguro
+Zinnia;Zinnia elegans;Seguro
+Frambueso;Rubus idaeus;Seguro
+Grosellero negro;Ribes nigrum;Seguro
+Grosellero rojo;Ribes rubrum;Seguro
+Zarzamora;Rubus fruticosus;Seguro
+Arándano rojo;Vaccinium macrocarpon;Seguro
 Goji;Lycium barbarum;Tóxico
 Endrino;Prunus spinosa;Tóxico
-Madroño;Arbutus unedo;No tóxico
+Madroño;Arbutus unedo;Seguro
 Physalis (Alquequenje);Physalis peruviana;Tóxico
-Majuelo (Espino blanco);Crataegus monogyna;No tóxico
+Majuelo (Espino blanco);Crataegus monogyna;Seguro
 Aro (Calas);Zantedeschia aethiopica;Tóxico
 Azalea;Rhododendron simsii;Tóxico
 Begonia;Begonia semperflorens;Tóxico
 Cambronera;Lycium europaeum;Tóxico
-Canónigo;Valerianella locusta;No tóxico
-Capuchina de jardín;Tropaeolum minus;No tóxico
+Canónigo;Valerianella locusta;Seguro
+Capuchina de jardín;Tropaeolum minus;Seguro
 Cardo;Cynara cardunculus;Tóxico
 Cebollino;Allium schoenoprasum;Tóxico
-Chayote;Sechium edule;No tóxico
+Chayote;Sechium edule;Seguro
 Chícharo (Guisante);Pisum sativum;Tóxico
 Clavelina;Dianthus deltoides;Tóxico
-Col lombarda;Brassica oleracea var. capitata f. rubra;No tóxico
-Col rizada (Kale);Brassica oleracea var. sabellica;No tóxico
+Col lombarda;Brassica oleracea var. capitata f. rubra;Seguro
+Col rizada (Kale);Brassica oleracea var. sabellica;Seguro
 Cyclamen (Ciclamen);Cyclamen persicum;Tóxico
 Dondiego de día (Ipomoea);Ipomoea purpurea;Tóxico
-Escarola;Cichorium endivia;No tóxico
+Escarola;Cichorium endivia;Seguro
 Esparraguera africana;Asparagus densiflorus;Tóxico
 Evónimo (Bonetero);Euonymus europaeus;Tóxico
 Glicinia japonesa;Wisteria floribunda;Tóxico
@@ -140,22 +140,22 @@ Laurel real;Prunus laurocerasus;Tóxico
 Lavanda;Lavandula angustifolia;Tóxico
 Lirio de San Juan;Hemerochallis fulva;Tóxico
 Margarita;Bellis perennis;Tóxico
-Margarita africana;Dimorphotheca ecklonis;No tóxico
-Mastuerzo;Lepidium sativum;No tóxico
-Melisa;Melissa officinalis;No tóxico
+Margarita africana;Dimorphotheca ecklonis;Seguro
+Mastuerzo;Lepidium sativum;Seguro
+Melisa;Melissa officinalis;Seguro
 Mostaza blanca;Sinapis alba;Tóxico
-Nabicol;Brassica napobrassica;No tóxico
-Nabo;Brassica rapa subsp. rapa;No tóxico
-Ocra;Abelmoschus esculentus;No tóxico
-Okra;Abelmoschus esculentus;No tóxico
+Nabicol;Brassica napobrassica;Seguro
+Nabo;Brassica rapa subsp. rapa;Seguro
+Ocra;Abelmoschus esculentus;Seguro
+Okra;Abelmoschus esculentus;Seguro
 Pasionaria (Pasiflora);Passiflora caerulea;Tóxico
-Pensamiento;Viola x wittrockiana;No tóxico
+Pensamiento;Viola x wittrockiana;Seguro
 Pervinca;Vinca minor;Tóxico
-Prímula (Primavera);Primula vulgaris;No tóxico
+Prímula (Primavera);Primula vulgaris;Seguro
 Ruibarbo;Rheum rhabarbarum;Tóxico
-Salvia decorativa;Salvia splendens;No tóxico
+Salvia decorativa;Salvia splendens;Seguro
 Tagete (Clavel de moro);Tagetes patula;Tóxico
 Tuya;Thuja occidentalis;Tóxico
-Valeriana;Valeriana officinalis;No tóxico
+Valeriana;Valeriana officinalis;Seguro
 Verbena;Verbena officinalis;Tóxico
-Zanahoria blanca (Chirivía);Pastinaca sativa;No tóxico
+Zanahoria blanca (Chirivía);Pastinaca sativa;Seguro

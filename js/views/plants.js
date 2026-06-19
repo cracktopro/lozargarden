@@ -1,6 +1,6 @@
 import * as db from "../db.js";
 import * as catalog from "../catalog.js";
-import { uid, nowISO, escapeHtml, debounce, isToxicForCats } from "../utils.js";
+import { uid, nowISO, escapeHtml, debounce, renderToxicityBadge } from "../utils.js";
 import {
   pageHeader, emptyState, searchInput, showModal, hideModal,
   showToast, confirmDialog, renderPhotoUploadHtml,
@@ -199,7 +199,7 @@ async function renderPlantCard(plant) {
           ${estado ? `<span class="badge badge-kawaii-green mb-2">${escapeHtml(estado.nombre)}</span>` : ""}
           ${container ? `<div class="small"><i class="bi bi-flower2"></i> ${escapeHtml(container.nombre)}</div>` : ""}
           ${plagaEnfermedad ? `<div class="small text-danger mt-1"><i class="bi bi-bug"></i> ${plagaEnfermedad} incidencia(s)</div>` : ""}
-          ${planta?.toxicidadGatos ? `<div class="small mt-1"><span class="badge ${isToxicForCats(planta.toxicidadGatos) ? "badge-toxic" : "badge-safe"}">🐱 ${escapeHtml(planta.toxicidadGatos)}</span></div>` : ""}
+          ${planta?.toxicidadGatos ? `<div class="small mt-1">${renderToxicityBadge(planta.toxicidadGatos)}</div>` : ""}
         </div>
         <div class="card-footer bg-transparent border-0 d-flex gap-2 pb-3 px-3">
           <button class="btn btn-sm btn-kawaii-outline flex-fill" data-edit-plant="${plant.id}">Editar</button>

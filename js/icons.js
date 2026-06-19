@@ -49,6 +49,10 @@ export const ICONS = {
     shape: `${BASE}/forma.png`,
     potType: `${BASE}/tipo_macetas.png`,
   },
+  toxicity: {
+    safe: `${BASE}/gato.png`,
+    toxic: `${BASE}/toxico.png`,
+  },
 };
 
 export function iconImg(src, className = "app-icon", alt = "") {

@@ -1,5 +1,5 @@
 import * as catalog from "../catalog.js";
-import { uid, escapeHtml, debounce, isToxicForCats } from "../utils.js";
+import { uid, escapeHtml, debounce, isToxicForCats, renderToxicityBadge } from "../utils.js";
 import {
   pageHeader, searchInput, showModal, hideModal, showToast, confirmDialog,
 } from "../ui.js";
@@ -60,7 +60,7 @@ async function renderPlantasTable(items) {
           <tr>
             <th>Nombre</th>
             <th>Nombre latín</th>
-            <th>🐱 Toxicidad gatos</th>
+            <th>${iconImg(ICONS.toxicity.safe, "toxicity-icon", "Toxicidad gatos")} Toxicidad gatos</th>
             <th class="text-end">Acciones</th>
           </tr>
         </thead>
@@ -71,7 +71,7 @@ async function renderPlantasTable(items) {
             <tr data-catalog-row="${p.id}">
               <td>${escapeHtml(p.nombre)}</td>
               <td class="fst-italic text-muted">${escapeHtml(p.nombreLatin)}</td>
-              <td><span class="badge ${isToxicForCats(p.toxicidadGatos) ? "badge-toxic" : "badge-safe"}">${escapeHtml(p.toxicidadGatos)}</span></td>
+              <td>${renderToxicityBadge(p.toxicidadGatos)}</td>
               <td class="text-end text-nowrap">
                 <button class="btn btn-sm btn-kawaii-outline" data-edit-catalog="plantas" data-id="${p.id}"><i class="bi bi-pencil"></i></button>
                 <button class="btn btn-sm btn-kawaii btn-kawaii-danger" data-delete-catalog="plantas" data-id="${p.id}"><i class="bi bi-trash"></i></button>
@@ -110,7 +110,7 @@ async function renderSimpleTable(key, items) {
 }
 
 function plantaForm(item = null) {
-  const p = item || { nombre: "", nombreLatin: "", toxicidadGatos: "No tóxico" };
+  const p = item || { nombre: "", nombreLatin: "", toxicidadGatos: "Seguro" };
   return `
     <form id="catalog-form">
       <div class="mb-3">
@@ -124,8 +124,8 @@ function plantaForm(item = null) {
       <div class="mb-3">
         <label class="form-label" for="cat-toxicidad">Toxicidad para gatos *</label>
         <select class="form-select" id="cat-toxicidad" required>
-          <option value="No tóxico" ${p.toxicidadGatos === "No tóxico" ? "selected" : ""}>No tóxico</option>
-          <option value="Tóxico" ${p.toxicidadGatos === "Tóxico" ? "selected" : ""}>Tóxico</option>
+          <option value="Seguro" ${!isToxicForCats(p.toxicidadGatos) ? "selected" : ""}>Seguro</option>
+          <option value="Tóxico" ${isToxicForCats(p.toxicidadGatos) ? "selected" : ""}>Tóxico</option>
         </select>
       </div>
     </form>`;

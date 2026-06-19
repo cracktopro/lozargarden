@@ -410,6 +410,19 @@ body::before {
   border: 1px solid #feb2b2;
 }
 
+.badge-toxicity {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.toxicity-icon {
+  width: 1.15rem;
+  height: 1.15rem;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
 .badge-safe {
   background: var(--kg-green-soft);
   color: var(--kg-green-deep);

@@ -1,6 +1,6 @@
 /** Utilidades compartidas */
 
-import { iconPath } from "./icons.js";
+import { iconPath, iconImg } from "./icons.js";
 
 export function uid() {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
@@ -66,7 +66,22 @@ export function debounce(fn, ms = 300) {
 export function isToxicForCats(toxicidad) {
   if (!toxicidad) return false;
   const t = toxicidad.toLowerCase().trim();
+  if (t === "seguro" || t === "no tóxico") return false;
   return t === "tóxico" || (t.includes("tóxico") && !t.startsWith("no"));
+}
+
+export function formatToxicityLabel(toxicidad) {
+  if (!toxicidad) return "";
+  return isToxicForCats(toxicidad) ? "Tóxico" : "Seguro";
+}
+
+export function renderToxicityBadge(toxicidad) {
+  if (!toxicidad) return "";
+  const toxic = isToxicForCats(toxicidad);
+  const badgeClass = toxic ? "badge-toxic" : "badge-safe";
+  const icon = iconPath(toxic ? "toxico.png" : "gato.png");
+  const label = formatToxicityLabel(toxicidad);
+  return `<span class="badge badge-toxicity ${badgeClass}">${iconImg(icon, "toxicity-icon", label)} ${escapeHtml(label)}</span>`;
 }
 
 const CONTAINER_ICON = iconPath("macetas.png");
