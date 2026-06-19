@@ -25,6 +25,7 @@ const CATALOG_STORES = new Set([
   "catalog_plagas",
   "catalog_enfermedades",
   "catalog_estados",
+  "catalog_productos",
 ]);
 
 const CATALOG_PATHS = {
@@ -32,6 +33,7 @@ const CATALOG_PATHS = {
   catalog_plagas: ["catalogs", "plagas", "items"],
   catalog_enfermedades: ["catalogs", "enfermedades", "items"],
   catalog_estados: ["catalogs", "estados", "items"],
+  catalog_productos: ["catalogs", "productos", "items"],
 };
 
 const USER_STORES = new Set(["plants", "diary", "containers", "treatments", "photos"]);
@@ -215,6 +217,34 @@ export async function getPhotosByOwner(ownerType, ownerId) {
 export async function deletePhotosByOwner(ownerType, ownerId) {
   const photos = await getPhotosByOwner(ownerType, ownerId);
   for (const p of photos) await remove("photos", p.id);
+}
+
+/** Sincroniza fotos sin borrar las existentes en Storage al re-guardar. */
+export async function syncPhotosByOwner(ownerType, ownerId, photos) {
+  const existing = await getPhotosByOwner(ownerType, ownerId);
+  const keepIds = new Set(photos.map((p) => p.id));
+
+  for (const old of existing) {
+    if (!keepIds.has(old.id)) await remove("photos", old.id);
+  }
+
+  for (const photo of photos) {
+    const item = { ...photo, ownerType, ownerId };
+
+    if (item.dataUrl?.startsWith("data:")) {
+      const { storagePath, downloadUrl, ...fresh } = item;
+      await put("photos", fresh);
+      continue;
+    }
+
+    if (item.storagePath || item.downloadUrl) {
+      const { dataUrl, ...meta } = item;
+      await setDoc(docRef("photos", item.id), meta, { merge: true });
+      continue;
+    }
+
+    await put("photos", item);
+  }
 }
 
 export async function countStore(storeName) {

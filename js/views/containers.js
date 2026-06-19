@@ -1,6 +1,6 @@
 import * as db from "../db.js";
 import * as catalog from "../catalog.js";
-import { uid, nowISO, escapeHtml, CONTAINER_TYPES, debounce } from "../utils.js";
+import { uid, nowISO, escapeHtml, CONTAINER_TYPES, debounce, formatCapacityDisplay } from "../utils.js";
 import {
   pageHeader, emptyState, searchInput, showModal, hideModal,
   showToast, confirmDialog,
@@ -211,7 +211,7 @@ async function renderContainerCard(container) {
           <h3 class="h5 fw-bold">${escapeHtml(container.nombre)}</h3>
           <span class="badge badge-kawaii mb-2">${escapeHtml(typeInfo.label)}</span>
           ${container.ubicacion ? `<p class="small mb-1"><i class="bi bi-geo-alt"></i> ${escapeHtml(container.ubicacion)}</p>` : ""}
-          ${container.capacidad ? `<p class="small text-muted mb-2">${escapeHtml(container.capacidad)}</p>` : ""}
+          ${container.capacidad ? `<p class="small text-muted mb-2"><i class="bi bi-droplet-half"></i> ${escapeHtml(formatCapacityDisplay(container.capacidad))}</p>` : ""}
           <div class="text-start mt-3">
             <strong class="small">Plantas (${plants.length}):</strong>
             ${plantNames.length

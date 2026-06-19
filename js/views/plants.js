@@ -162,12 +162,7 @@ async function openPlantModal(plant = null) {
     saveBtn.disabled = true;
     try {
       await db.put("plants", data);
-
-      if (plant) await db.deletePhotosByOwner("plant", plant.id);
-      for (const photo of pendingPhotos) {
-        photo.ownerId = data.id;
-        await db.put("photos", photo);
-      }
+      await db.syncPhotosByOwner("plant", data.id, pendingPhotos);
 
       hideModal();
       showToast(plant ? "Planta actualizada" : "Planta añadida al huerto");

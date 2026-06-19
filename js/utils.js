@@ -63,6 +63,16 @@ export function debounce(fn, ms = 300) {
   };
 }
 
+export function formatCapacityDisplay(capacidad) {
+  if (!capacidad) return "";
+  const text = capacidad.trim();
+  if (/l\b|litro/i.test(text)) return text;
+  const match = text.match(/^(\d+(?:[.,]\d+)?)/);
+  if (!match) return text;
+  const rest = text.slice(match[0].length).trim();
+  return rest ? `${match[1]} L ${rest}` : `${match[1]} L`;
+}
+
 export function isToxicForCats(toxicidad) {
   if (!toxicidad) return false;
   const t = toxicidad.toLowerCase().trim();

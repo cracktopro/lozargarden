@@ -8,6 +8,7 @@ const CATALOG_MAP = {
   plagas: { store: "catalog_plagas", file: "plagas.txt", type: "line" },
   enfermedades: { store: "catalog_enfermedades", file: "enfermedades.txt", type: "line" },
   estados: { store: "catalog_estados", file: "estados.txt", type: "line" },
+  productos: { store: "catalog_productos", file: "productos.txt", type: "line" },
 };
 
 function parsePlantasLine(line) {
@@ -48,28 +49,45 @@ function serializeLines(items) {
 
 export async function initCatalogs() {
   const initialized = await db.getMeta("catalogs_initialized");
-  if (initialized) return;
 
-  for (const [key, config] of Object.entries(CATALOG_MAP)) {
-    try {
-      const res = await fetch(`./${config.file}`);
-      if (!res.ok) throw new Error(`No se pudo cargar ${config.file}`);
-      const text = await res.text();
-      const items = parseFileContent(key, text);
-      await db.putMany(config.store, items);
-    } catch (err) {
-      console.warn(`Catálogo ${key}:`, err);
-      if (key === "estados") {
-        const defaults = [
-          "No germinada", "Germinando", "Plántula", "Crecimiento activo",
-          "Floración", "Enferma", "Muerta",
-        ].map((nombre) => ({ id: uid(), nombre }));
-        await db.putMany(config.store, defaults);
-      }
+  if (!initialized) {
+    for (const [key, config] of Object.entries(CATALOG_MAP)) {
+      await seedCatalogFromFile(key);
     }
+    await db.setMeta("catalogs_initialized", true);
+    return;
   }
 
-  await db.setMeta("catalogs_initialized", true);
+  for (const key of Object.keys(CATALOG_MAP)) {
+    await seedCatalogIfEmpty(key);
+  }
+}
+
+async function seedCatalogFromFile(key) {
+  const config = CATALOG_MAP[key];
+  try {
+    const res = await fetch(`./${config.file}`);
+    if (!res.ok) throw new Error(`No se pudo cargar ${config.file}`);
+    const text = await res.text();
+    const items = parseFileContent(key, text);
+    await db.putMany(config.store, items);
+  } catch (err) {
+    console.warn(`Catálogo ${key}:`, err);
+    if (key === "estados") {
+      const defaults = [
+        "No germinada", "Germinando", "Plántula", "Crecimiento activo",
+        "Floración", "Enferma", "Muerta",
+      ].map((nombre) => ({ id: uid(), nombre }));
+      await db.putMany(config.store, defaults);
+    }
+  }
+}
+
+async function seedCatalogIfEmpty(key) {
+  const config = CATALOG_MAP[key];
+  const items = await db.getAll(config.store);
+  if (items.length > 0) return;
+  await seedCatalogFromFile(key);
 }
 
 export async function getCatalog(key) {
@@ -142,6 +160,10 @@ export async function findPlagaById(id) {
 
 export async function findEnfermedadById(id) {
   return getCatalogItem("enfermedades", id);
+}
+
+export async function findProductoById(id) {
+  return getCatalogItem("productos", id);
 }
 
 export { CATALOG_MAP };

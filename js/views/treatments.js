@@ -4,10 +4,22 @@ import { uid, nowISO, todayDate, nowTime, formatDateTime, escapeHtml, debounce }
 import {
   pageHeader, emptyState, searchInput, showModal, hideModal,
   showToast, confirmDialog,
+  renderSearchablePickerHtml, bindSearchablePicker, getSearchablePickerValues,
 } from "../ui.js";
 import { ICONS, iconImg } from "../icons.js";
 
-function treatmentFormHtml(treatment = null, plants = []) {
+function resolveProductoName(productos, productoId) {
+  if (!productoId) return "";
+  return productos.find((p) => p.id === productoId)?.nombre || "";
+}
+
+function selectedProductoIds(productos, productoNombre) {
+  if (!productoNombre) return [];
+  const match = productos.find((p) => p.nombre === productoNombre);
+  return match ? [match.id] : [];
+}
+
+function treatmentFormHtml(treatment = null, plants = [], productos = []) {
   const t = treatment || {
     plantId: plants[0]?.id || "",
     fecha: todayDate(),
@@ -35,8 +47,14 @@ function treatmentFormHtml(treatment = null, plants = []) {
           <input type="time" class="form-control" id="treatment-hora" value="${escapeHtml(t.hora)}" required>
         </div>
         <div class="col-12">
-          <label class="form-label" for="treatment-producto">Producto / método (opcional)</label>
-          <input type="text" class="form-control" id="treatment-producto" value="${escapeHtml(t.producto)}" placeholder="Aceite de neem, sulfato de cobre...">
+          <label class="form-label">Producto / método (opcional)</label>
+          ${renderSearchablePickerHtml({
+            id: "treatment-producto-picker",
+            items: productos,
+            selectedIds: selectedProductoIds(productos, t.producto),
+            singleSelect: true,
+            searchPlaceholder: "Buscar producto o método...",
+          })}
         </div>
         <div class="col-12">
           <label class="form-label" for="treatment-detalle">Detalle del tratamiento *</label>
@@ -57,7 +75,7 @@ async function enrichPlants() {
 }
 
 async function openTreatmentModal(treatment = null) {
-  const plants = await enrichPlants();
+  const [plants, productos] = await Promise.all([enrichPlants(), catalog.getCatalog("productos")]);
   if (!plants.length) {
     showToast("Primero añade plantas al huerto", "error");
     return;
@@ -65,12 +83,14 @@ async function openTreatmentModal(treatment = null) {
 
   showModal(
     treatment ? "✏️ Editar tratamiento" : "💧 Nuevo tratamiento",
-    treatmentFormHtml(treatment, plants),
+    treatmentFormHtml(treatment, plants, productos),
     `
       <button type="button" class="btn btn-kawaii-outline" data-bs-dismiss="modal">Cancelar</button>
       <button type="button" class="btn btn-kawaii" id="save-treatment-btn">Guardar</button>
     `
   );
+
+  bindSearchablePicker("treatment-producto-picker");
 
   document.getElementById("save-treatment-btn").addEventListener("click", async () => {
     const plantId = document.getElementById("treatment-plant").value;
@@ -82,12 +102,14 @@ async function openTreatmentModal(treatment = null) {
       return;
     }
 
+    const productoId = getSearchablePickerValues("treatment-producto-picker")[0] || "";
+
     const data = {
       id: treatment?.id || uid(),
       plantId,
       fecha,
       hora,
-      producto: document.getElementById("treatment-producto").value.trim(),
+      producto: resolveProductoName(productos, productoId),
       detalle,
       createdAt: treatment?.createdAt || nowISO(),
       updatedAt: nowISO(),

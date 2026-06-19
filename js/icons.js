@@ -43,6 +43,7 @@ export const ICONS = {
     plagas: `${BASE}/plagas.png`,
     enfermedades: `${BASE}/enfermedades.png`,
     estados: `${BASE}/estados.png`,
+    productos: `${BASE}/tratamiento.png`,
   },
   macetadora: {
     calculator: `${BASE}/calculadora.png`,

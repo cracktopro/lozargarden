@@ -84,12 +84,7 @@ async function openDiaryModal(entry = null) {
     saveBtn.disabled = true;
     try {
       await db.put("diary", data);
-
-      if (entry) await db.deletePhotosByOwner("diary", entry.id);
-      for (const photo of pendingPhotos) {
-        photo.ownerId = data.id;
-        await db.put("photos", photo);
-      }
+      await db.syncPhotosByOwner("diary", data.id, pendingPhotos);
 
       hideModal();
       showToast(entry ? "Entrada actualizada" : "Entrada añadida al diario");
