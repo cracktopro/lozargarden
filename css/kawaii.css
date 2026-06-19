@@ -1195,6 +1195,48 @@ body::before {
   color: #ece4f4;
 }
 
+.entity-link-btn {
+  display: inline;
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--kg-green-deep);
+  font-weight: 600;
+  font-size: inherit;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.entity-link-btn:hover,
+.entity-link-btn:focus-visible {
+  color: var(--kg-pink-deep);
+}
+
+.entity-preview-modal {
+  max-width: 420px;
+  margin: 0 auto;
+}
+
+.entity-preview-modal .entity-preview-card {
+  height: auto;
+}
+
+.entity-preview-modal .entity-preview-card:hover {
+  transform: none;
+}
+
+[data-theme="dark"] .entity-link-btn {
+  color: var(--kg-green-deep);
+}
+
+[data-theme="dark"] .entity-link-btn:hover,
+[data-theme="dark"] .entity-link-btn:focus-visible {
+  color: var(--kg-pink-deep);
+}
+
 @media print {
   .sidebar,
   .app-header,

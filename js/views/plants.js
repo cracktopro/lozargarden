@@ -5,7 +5,7 @@ import {
   pageHeader, emptyState, searchInput, showModal, hideModal,
   showToast, confirmDialog, renderPhotoUploadHtml,
   renderSearchablePickerHtml, bindSearchablePicker, getSearchablePickerValues,
-  bindPhotoUpload, encodePhotoGallery,
+  bindPhotoUpload, encodePhotoGallery, bindPhotoGalleryClicks,
 } from "../ui.js";
 import { ICONS, iconImg } from "../icons.js";
 
@@ -252,7 +252,7 @@ async function openPlantModal(plant = null) {
   });
 }
 
-async function renderPlantCard(plant, allTreatments) {
+async function buildPlantCardHtml(plant, allTreatments, { preview = false } = {}) {
   const { planta, estado, container, photos } = await getPlantCardData(plant);
   const displayName = plant.apodo || planta?.nombre || "Planta sin nombre";
   const imgHtml = photos.length
@@ -265,15 +265,28 @@ async function renderPlantCard(plant, allTreatments) {
   const incidenceCount = (plant.plagaIds?.length || 0) + (plant.enfermedadIds?.length || 0);
   const treatmentCount = countPlantTreatments(plant.id, allTreatments);
 
-  return `
-    <div class="col-sm-6 col-lg-4">
-      <article class="kawaii-card h-100">
+  const containerHtml = container
+    ? `<button type="button" class="entity-link-btn small" data-preview-container="${container.id}" aria-label="Ver contenedor ${escapeHtml(container.nombre)}">
+        <i class="bi bi-flower2"></i> ${escapeHtml(container.nombre)}
+      </button>`
+    : "";
+
+  const footerHtml = preview
+    ? ""
+    : `
+        <div class="card-footer bg-transparent border-0 d-flex gap-2 pb-3 px-3">
+          <button class="btn btn-sm btn-kawaii-outline flex-fill" data-edit-plant="${plant.id}">Editar</button>
+          <button class="btn btn-sm btn-kawaii btn-kawaii-danger" data-delete-plant="${plant.id}" aria-label="Eliminar">🗑</button>
+        </div>`;
+
+  const article = `
+      <article class="kawaii-card h-100${preview ? " entity-preview-card" : ""}">
         ${imgHtml}
         <div class="card-body">
           <h3 class="h6 fw-bold mb-1">${escapeHtml(displayName)}</h3>
           ${planta ? `<p class="small text-muted mb-1 fst-italic">${escapeHtml(planta.nombreLatin)}</p>` : ""}
           ${estado ? `<span class="badge badge-kawaii-green mb-2">${escapeHtml(estado.nombre)}</span>` : ""}
-          ${container ? `<div class="small"><i class="bi bi-flower2"></i> ${escapeHtml(container.nombre)}</div>` : ""}
+          ${containerHtml}
           <div class="d-flex flex-wrap gap-2 mt-2">
             ${
               incidenceCount
@@ -292,12 +305,99 @@ async function renderPlantCard(plant, allTreatments) {
           </div>
           ${planta?.toxicidadGatos ? `<div class="small mt-2">${renderToxicityBadge(planta.toxicidadGatos)}</div>` : ""}
         </div>
-        <div class="card-footer bg-transparent border-0 d-flex gap-2 pb-3 px-3">
-          <button class="btn btn-sm btn-kawaii-outline flex-fill" data-edit-plant="${plant.id}">Editar</button>
-          <button class="btn btn-sm btn-kawaii btn-kawaii-danger" data-delete-plant="${plant.id}" aria-label="Eliminar">🗑</button>
-        </div>
-      </article>
-    </div>`;
+        ${footerHtml}
+      </article>`;
+
+  return preview ? article : `<div class="col-sm-6 col-lg-4">${article}</div>`;
+}
+
+let plantPreviewAbort = null;
+
+async function bindPlantCardInteractions(root, allTreatments, { preview = false } = {}) {
+  if (preview) {
+    plantPreviewAbort?.abort();
+    plantPreviewAbort = new AbortController();
+  }
+  const signal = preview ? plantPreviewAbort.signal : undefined;
+
+  bindPhotoGalleryClicks(root);
+
+  root.querySelectorAll("[data-preview-container]").forEach((btn) => {
+    btn.addEventListener(
+      "click",
+      async (e) => {
+        e.preventDefault();
+        if (btn.closest(".entity-preview-modal")) hideModal();
+        const { openContainerPreviewModal } = await import("./containers.js");
+        openContainerPreviewModal(btn.dataset.previewContainer);
+      },
+      signal ? { signal } : undefined
+    );
+  });
+
+  root.querySelectorAll("[data-plant-incidences]").forEach((btn) => {
+    btn.addEventListener(
+      "click",
+      async (e) => {
+        e.preventDefault();
+        const plant = await db.getById("plants", btn.dataset.plantIncidences);
+        if (plant) openIncidencesModal(plant);
+      },
+      signal ? { signal } : undefined
+    );
+  });
+
+  root.querySelectorAll("[data-plant-treatments]").forEach((btn) => {
+    btn.addEventListener(
+      "click",
+      async (e) => {
+        e.preventDefault();
+        const plant = await db.getById("plants", btn.dataset.plantTreatments);
+        if (plant) openPlantTreatmentsModal(plant, allTreatments);
+      },
+      signal ? { signal } : undefined
+    );
+  });
+}
+
+export async function openPlantPreviewModal(plantId) {
+  const [plant, allTreatments] = await Promise.all([
+    db.getById("plants", plantId),
+    db.getAll("treatments"),
+  ]);
+  if (!plant) {
+    showToast("Planta no encontrada", "error");
+    return;
+  }
+
+  const { planta } = await getPlantCardData(plant);
+  const displayName = plant.apodo || planta?.nombre || "Planta";
+
+  showModal(
+    displayName,
+    `<div class="entity-preview-modal">${await buildPlantCardHtml(plant, allTreatments, { preview: true })}</div>`,
+    `
+      <button type="button" class="btn btn-kawaii-outline" data-bs-dismiss="modal">Cerrar</button>
+      <button type="button" class="btn btn-kawaii" id="preview-edit-plant-btn">Editar</button>
+    `
+  );
+  document.getElementById("appModalLabel").innerHTML = `
+    <span class="d-inline-flex align-items-center gap-2">
+      ${iconImg(ICONS.page.plants, "modal-title-icon", "")}
+      <span>${escapeHtml(displayName)}</span>
+    </span>`;
+
+  const body = document.getElementById("appModalBody");
+  await bindPlantCardInteractions(body, allTreatments, { preview: true });
+
+  document.getElementById("preview-edit-plant-btn").addEventListener("click", () => {
+    hideModal();
+    openPlantModal(plant);
+  });
+}
+
+async function renderPlantCard(plant, allTreatments) {
+  return buildPlantCardHtml(plant, allTreatments);
 }
 
 export async function render() {
@@ -328,6 +428,15 @@ export function bindEvents(container) {
   container.querySelector("#add-plant-btn")?.addEventListener("click", () => openPlantModal());
 
   container.addEventListener("click", async (e) => {
+    const containerBtn = e.target.closest("[data-preview-container]");
+    if (containerBtn && containerBtn.closest("#view-container")) {
+      e.preventDefault();
+      if (containerBtn.closest(".entity-preview-modal")) hideModal();
+      const { openContainerPreviewModal } = await import("./containers.js");
+      openContainerPreviewModal(containerBtn.dataset.previewContainer);
+      return;
+    }
+
     const incBtn = e.target.closest("[data-plant-incidences]");
     if (incBtn) {
       e.preventDefault();

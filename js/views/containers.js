@@ -5,6 +5,7 @@ import {
   pageHeader, emptyState, searchInput, showModal, hideModal,
   showToast, confirmDialog, renderPhotoUploadHtml, bindPhotoUpload, encodePhotoGallery,
   renderSearchablePickerHtml, bindSearchablePicker, getSearchablePickerValues,
+  bindPhotoGalleryClicks,
 } from "../ui.js";
 import { ICONS, iconImg } from "../icons.js";
 import { renderMacetadoraHtml, initMacetadora } from "../macetadora.js";
@@ -244,16 +245,16 @@ async function openContainerModal(container = null, defaults = {}) {
   });
 }
 
-async function renderContainerCard(container) {
+async function buildContainerCardHtml(container, { preview = false } = {}) {
   const typeInfo = CONTAINER_TYPES.find((t) => t.id === container.tipo) || CONTAINER_TYPES[0];
   const [plants, photos] = await Promise.all([
     db.getAll("plants").then((all) => all.filter((p) => p.containerId === container.id)),
     loadContainerPhotos(container.id),
   ]);
-  const plantNames = await Promise.all(
+  const plantEntries = await Promise.all(
     plants.map(async (p) => {
       const cat = await catalog.findPlantaById(p.catalogPlantId);
-      return p.apodo || cat?.nombre || "Planta";
+      return { id: p.id, name: p.apodo || cat?.nombre || "Planta" };
     })
   );
 
@@ -264,28 +265,110 @@ async function renderContainerCard(container) {
       </button>`
     : `<div class="plant-card-placeholder">${iconImg(typeInfo.icon, "container-type-icon-img", typeInfo.label)}</div>`;
 
-  return `
-    <div class="col-md-6 col-xl-4">
-      <article class="kawaii-card h-100">
+  const plantsListHtml = plantEntries.length
+    ? `<ul class="list-unstyled mb-0 ps-0">${plantEntries
+        .map(
+          (p) =>
+            `<li class="mb-1"><button type="button" class="entity-link-btn" data-preview-plant="${p.id}" aria-label="Ver planta ${escapeHtml(p.name)}">${escapeHtml(p.name)}</button></li>`
+        )
+        .join("")}</ul>`
+    : `<p class="small text-muted mb-0">Sin plantas asignadas</p>`;
+
+  const footerHtml = preview
+    ? ""
+    : `
+        <div class="card-footer bg-transparent border-0 d-flex gap-2 pb-3 px-3">
+          <button class="btn btn-sm btn-kawaii-outline flex-fill" data-edit-container="${container.id}">Editar</button>
+          <button class="btn btn-sm btn-kawaii btn-kawaii-danger" data-delete-container="${container.id}">🗑</button>
+        </div>`;
+
+  const article = `
+      <article class="kawaii-card h-100${preview ? " entity-preview-card" : ""}">
         ${imgHtml}
         <div class="card-body text-center">
           <h3 class="h5 fw-bold">${escapeHtml(container.nombre)}</h3>
           <span class="badge badge-kawaii mb-2">${escapeHtml(typeInfo.label)}</span>
           ${container.ubicacion ? `<p class="small mb-1"><i class="bi bi-geo-alt"></i> ${escapeHtml(container.ubicacion)}</p>` : ""}
-          ${container.capacidad ? `<p class="small text-muted mb-2"><i class="bi bi-droplet-half"></i> ${escapeHtml(formatCapacityDisplay(container.capacidad))}</p>` : ""}
+          ${container.capacidad ? `<p class="small text-muted mb-2"><i class="bi bi-droplet-half"></i> ${escapeHtml(formatCapacityDisplay(container.capacidad, container.tipo))}</p>` : ""}
           <div class="text-start mt-3">
             <strong class="small">Plantas (${plants.length}):</strong>
-            ${plantNames.length
-              ? `<ul class="small mb-0 ps-3">${plantNames.map((n) => `<li>${escapeHtml(n)}</li>`).join("")}</ul>`
-              : `<p class="small text-muted mb-0">Sin plantas asignadas</p>`}
+            <div class="mt-1">${plantsListHtml}</div>
           </div>
         </div>
-        <div class="card-footer bg-transparent border-0 d-flex gap-2 pb-3 px-3">
-          <button class="btn btn-sm btn-kawaii-outline flex-fill" data-edit-container="${container.id}">Editar</button>
-          <button class="btn btn-sm btn-kawaii btn-kawaii-danger" data-delete-container="${container.id}">🗑</button>
-        </div>
-      </article>
-    </div>`;
+        ${footerHtml}
+      </article>`;
+
+  return preview ? article : `<div class="col-md-6 col-xl-4">${article}</div>`;
+}
+
+function bindContainerPlantLinks(root) {
+  if (root.dataset.plantPreviewBound) return;
+  root.dataset.plantPreviewBound = "1";
+
+  root.addEventListener("click", async (e) => {
+    const btn = e.target.closest("[data-preview-plant]");
+    if (!btn || !root.contains(btn)) return;
+    e.preventDefault();
+    if (btn.closest(".entity-preview-modal")) hideModal();
+    const { openPlantPreviewModal } = await import("./plants.js");
+    openPlantPreviewModal(btn.dataset.previewPlant);
+  });
+}
+
+let containerPreviewAbort = null;
+
+function bindContainerPreviewInteractions(root) {
+  containerPreviewAbort?.abort();
+  containerPreviewAbort = new AbortController();
+  const { signal } = containerPreviewAbort;
+
+  bindPhotoGalleryClicks(root);
+
+  root.querySelectorAll("[data-preview-plant]").forEach((btn) => {
+    btn.addEventListener(
+      "click",
+      async (e) => {
+        e.preventDefault();
+        hideModal();
+        const { openPlantPreviewModal } = await import("./plants.js");
+        openPlantPreviewModal(btn.dataset.previewPlant);
+      },
+      { signal }
+    );
+  });
+}
+
+export async function openContainerPreviewModal(containerId) {
+  const container = await db.getById("containers", containerId);
+  if (!container) {
+    showToast("Contenedor no encontrado", "error");
+    return;
+  }
+
+  showModal(
+    container.nombre,
+    `<div class="entity-preview-modal">${await buildContainerCardHtml(container, { preview: true })}</div>`,
+    `
+      <button type="button" class="btn btn-kawaii-outline" data-bs-dismiss="modal">Cerrar</button>
+      <button type="button" class="btn btn-kawaii" id="preview-edit-container-btn">Editar</button>
+    `
+  );
+  document.getElementById("appModalLabel").innerHTML = `
+    <span class="d-inline-flex align-items-center gap-2">
+      ${iconImg(ICONS.page.containers, "modal-title-icon", "")}
+      <span>${escapeHtml(container.nombre)}</span>
+    </span>`;
+
+  bindContainerPreviewInteractions(document.getElementById("appModalBody"));
+
+  document.getElementById("preview-edit-container-btn").addEventListener("click", () => {
+    hideModal();
+    openContainerModal(container);
+  });
+}
+
+async function renderContainerCard(container) {
+  return buildContainerCardHtml(container);
 }
 
 export async function render() {
@@ -333,6 +416,8 @@ export function bindEvents(container) {
   }
 
   container.querySelector("#add-container-btn")?.addEventListener("click", () => openContainerModal());
+
+  bindContainerPlantLinks(container);
 
   container.querySelectorAll("[data-edit-container]").forEach((btn) => {
     btn.addEventListener("click", async () => {

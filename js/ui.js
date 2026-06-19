@@ -62,6 +62,8 @@ export function openPhotoGallery(sources, startIndex = 0, title = "Fotos") {
 }
 
 export function bindPhotoGalleryClicks(container) {
+  if (!container || container.dataset.photoGalleryBound) return;
+  container.dataset.photoGalleryBound = "1";
   container.addEventListener("click", (e) => {
     const btn = e.target.closest("[data-photo-gallery]");
     if (!btn) return;
@@ -100,8 +102,10 @@ export function showToast(message, type = "success") {
 }
 
 export function showModal(title, bodyHtml, footerHtml = "") {
+  const bodyEl = document.getElementById("appModalBody");
+  delete bodyEl?.dataset.photoGalleryBound;
   document.getElementById("appModalLabel").textContent = title;
-  document.getElementById("appModalBody").innerHTML = bodyHtml;
+  bodyEl.innerHTML = bodyHtml;
   document.getElementById("appModalFooter").innerHTML = footerHtml;
   const el = document.getElementById("appModal");
   if (!modalInstance) modalInstance = new bootstrap.Modal(el);

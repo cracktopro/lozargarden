@@ -70,9 +70,19 @@ export function getTreatmentPlantIds(treatment) {
   return [];
 }
 
-export function formatCapacityDisplay(capacidad) {
+export function formatCapacityDisplay(capacidad, tipo = null) {
   if (!capacidad) return "";
   const text = capacidad.trim();
+  const isSemillero = tipo === "semillero";
+
+  if (isSemillero) {
+    if (/celda/i.test(text)) return text;
+    const match = text.match(/^(\d+(?:[.,]\d+)?)/);
+    if (!match) return text;
+    const rest = text.slice(match[0].length).trim();
+    return rest ? `${match[1]} Celdas ${rest}` : `${match[1]} Celdas`;
+  }
+
   if (/l\b|litro/i.test(text)) return text;
   const match = text.match(/^(\d+(?:[.,]\d+)?)/);
   if (!match) return text;
