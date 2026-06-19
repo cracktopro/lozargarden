@@ -4,6 +4,7 @@ import { uid, nowISO, escapeHtml, CONTAINER_TYPES, debounce, formatCapacityDispl
 import {
   pageHeader, emptyState, searchInput, showModal, hideModal,
   showToast, confirmDialog, renderPhotoUploadHtml, bindPhotoUpload, encodePhotoGallery,
+  renderSearchablePickerHtml, bindSearchablePicker, getSearchablePickerValues,
 } from "../ui.js";
 import { ICONS, iconImg } from "../icons.js";
 import { renderMacetadoraHtml, initMacetadora } from "../macetadora.js";
@@ -71,7 +72,13 @@ function renderMacetadoraTab() {
     </div>`;
 }
 
-function containerFormHtml(container = null, allPlants = []) {
+function getSelectablePlantsForContainer(allPlants, containerId = null) {
+  return allPlants.filter(
+    (p) => !p.containerId || (containerId && p.containerId === containerId)
+  );
+}
+
+function containerFormHtml(container = null, plantItems = []) {
   const c = container || {
     nombre: "",
     tipo: "maceta",
@@ -105,14 +112,14 @@ function containerFormHtml(container = null, allPlants = []) {
           <input type="text" class="form-control" id="container-capacidad" value="${escapeHtml(c.capacidad)}" placeholder="30 cm, 5L...">
         </div>
         <div class="col-12">
-          <label class="form-label" for="container-plantas">Plantas / semillas en este contenedor</label>
-          <select class="form-select" id="container-plantas" multiple size="5">
-            ${allPlants.map((p) => {
-              const label = p.apodo || p.catalogName || "Planta";
-              return `<option value="${p.id}" ${(c.plantIds || []).includes(p.id) ? "selected" : ""}>${escapeHtml(label)}</option>`;
-            }).join("")}
-          </select>
-          <small class="text-muted">También puedes asignar desde la ficha de cada planta</small>
+          <label class="form-label">Plantas / semillas en este contenedor</label>
+          ${renderSearchablePickerHtml({
+            id: "container-plants-picker",
+            items: plantItems,
+            selectedIds: c.plantIds || [],
+            searchPlaceholder: "Buscar planta...",
+          })}
+          <small class="text-muted">Solo plantas sin contenedor o ya asignadas aquí. También puedes asignar desde la ficha de cada planta.</small>
         </div>
         <div class="col-12">
           <label class="form-label" for="container-notas">Notas</label>
@@ -165,6 +172,12 @@ async function openContainerModal(container = null, defaults = {}) {
     container.plantIds = assigned;
   }
 
+  const selectablePlants = getSelectablePlantsForContainer(allPlants, container?.id);
+  const plantItems = selectablePlants.map((p) => ({
+    id: p.id,
+    nombre: p.apodo || p.catalogName || "Planta",
+  }));
+
   const formDefaults = container || {
     nombre: "",
     tipo: "maceta",
@@ -176,7 +189,7 @@ async function openContainerModal(container = null, defaults = {}) {
 
   showModal(
     container ? "✏️ Editar contenedor" : "Nuevo contenedor",
-    containerFormHtml(formDefaults, allPlants),
+    containerFormHtml(formDefaults, plantItems),
     `
       <button type="button" class="btn btn-kawaii-outline" data-bs-dismiss="modal">Cancelar</button>
       <button type="button" class="btn btn-kawaii" id="save-container-btn">Guardar</button>
@@ -190,6 +203,8 @@ async function openContainerModal(container = null, defaults = {}) {
     photoUpload.refresh();
   }
 
+  bindSearchablePicker("container-plants-picker");
+
   document.getElementById("save-container-btn").addEventListener("click", async () => {
     const saveBtn = document.getElementById("save-container-btn");
     const nombre = document.getElementById("container-nombre").value.trim();
@@ -198,8 +213,7 @@ async function openContainerModal(container = null, defaults = {}) {
       return;
     }
 
-    const plantSelect = document.getElementById("container-plantas");
-    const selectedPlantIds = [...plantSelect.selectedOptions].map((o) => o.value);
+    const selectedPlantIds = getSearchablePickerValues("container-plants-picker");
 
     const data = {
       id: container?.id || uid(),
