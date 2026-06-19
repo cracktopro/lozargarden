@@ -45,13 +45,15 @@ URL de producción: **https://cracktopro.github.io/lozargarden/**
    - Publica el contenido de `dist/`
 4. Activa Auth, Firestore y Storage en Firebase
 5. En Firebase Console → Authentication → **Authorized domains** → añade `cracktopro.github.io`
-6. **Storage CORS (obligatorio para subir fotos desde GitHub Pages):** el bucket de Google Cloud debe permitir peticiones desde tu dominio. En [Google Cloud Console](https://console.cloud.google.com/) → Cloud Storage → bucket `lozargarden.firebasestorage.app` → abre **Cloud Shell** (icono terminal arriba a la derecha) y ejecuta:
+6. **Storage CORS (obligatorio para subir fotos desde GitHub Pages):** el bucket de Google Cloud debe permitir peticiones desde tu dominio. En Cloud Shell:
 
 ```bash
-gcloud storage buckets update gs://lozargarden.firebasestorage.app --cors-file=storage.cors.json
+gcloud storage buckets list --project=lozargarden
+curl -O https://raw.githubusercontent.com/cracktopro/lozargarden/main/storage.cors.json
+gcloud storage buckets update gs://NOMBRE-DEL-BUCKET --cors-file=storage.cors.json
 ```
 
-(Si no tienes el archivo en Cloud Shell, súbelo o pega el contenido de `storage.cors.json` del repo.) Solo hace falta una vez. Sin esto, la subida de fotos falla con error CORS en la consola del navegador.
+Sustituye `NOMBRE-DEL-BUCKET` por el nombre que devuelve `buckets list` (p. ej. `lozargarden.appspot.com` o `lozargarden.firebasestorage.app`). Si ves `GcsNotFoundError`, el nombre del bucket era incorrecto. Solo hace falta una vez.
 
 ### Rutas de assets en GitHub Pages
 

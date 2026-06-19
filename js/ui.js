@@ -101,6 +101,81 @@ export function multiSelectOptions(items, selectedIds = [], labelKey = "nombre")
     .join("");
 }
 
+export function renderSearchablePickerHtml({
+  id,
+  items,
+  selectedIds = [],
+  labelKey = "nombre",
+  singleSelect = false,
+  searchPlaceholder = "Buscar...",
+}) {
+  const inputType = singleSelect ? "radio" : "checkbox";
+
+  const itemsHtml = items
+    .map((item) => {
+      const label = item[labelKey] ?? "";
+      const checked = selectedIds.includes(item.id) ? "checked" : "";
+      const selectedClass = checked ? " is-selected" : "";
+      return `
+        <label class="kawaii-check-item${selectedClass}" data-label="${escapeHtml(String(label).toLowerCase())}">
+          <input type="${inputType}" name="${id}" value="${escapeHtml(item.id)}" ${checked}>
+          <span class="kawaii-check-mark" aria-hidden="true"></span>
+          <span class="kawaii-check-label">${escapeHtml(label)}</span>
+        </label>`;
+    })
+    .join("");
+
+  return `
+    <div class="kawaii-picker" id="${id}" data-single-select="${singleSelect ? "true" : "false"}">
+      <div class="kawaii-picker-search-wrap">
+        <i class="bi bi-search" aria-hidden="true"></i>
+        <input type="search" class="form-control kawaii-picker-search" placeholder="${escapeHtml(searchPlaceholder)}" aria-label="${escapeHtml(searchPlaceholder)}">
+      </div>
+      <div class="kawaii-picker-list" role="${singleSelect ? "radiogroup" : "group"}">
+        ${itemsHtml || `<p class="text-muted small mb-0 px-1">No hay opciones</p>`}
+      </div>
+      <p class="kawaii-picker-empty text-muted small mb-0 mt-2 d-none">Sin resultados</p>
+    </div>`;
+}
+
+export function bindSearchablePicker(pickerId) {
+  const root = document.getElementById(pickerId);
+  if (!root) return;
+
+  const search = root.querySelector(".kawaii-picker-search");
+  const list = root.querySelector(".kawaii-picker-list");
+  const empty = root.querySelector(".kawaii-picker-empty");
+  const single = root.dataset.singleSelect === "true";
+
+  search?.addEventListener("input", () => {
+    const q = search.value.toLowerCase().trim();
+    let visible = 0;
+    list?.querySelectorAll(".kawaii-check-item").forEach((item) => {
+      const label = item.dataset.label || item.textContent.toLowerCase();
+      const show = !q || label.includes(q);
+      item.classList.toggle("d-none", !show);
+      if (show) visible += 1;
+    });
+    empty?.classList.toggle("d-none", visible > 0);
+  });
+
+  list?.addEventListener("change", (e) => {
+    if (!e.target.matches('input[type="checkbox"], input[type="radio"]')) return;
+    if (single) {
+      list.querySelectorAll(".kawaii-check-item").forEach((el) => el.classList.remove("is-selected"));
+      e.target.closest(".kawaii-check-item")?.classList.add("is-selected");
+      return;
+    }
+    e.target.closest(".kawaii-check-item")?.classList.toggle("is-selected", e.target.checked);
+  });
+}
+
+export function getSearchablePickerValues(pickerId) {
+  const root = document.getElementById(pickerId);
+  if (!root) return [];
+  return [...root.querySelectorAll(".kawaii-picker-list input:checked")].map((el) => el.value);
+}
+
 export function renderPhotoUploadHtml(baseId) {
   return `
     <div class="photo-upload-actions d-flex gap-2 mb-2">

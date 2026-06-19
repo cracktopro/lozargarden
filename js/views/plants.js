@@ -3,7 +3,8 @@ import * as catalog from "../catalog.js";
 import { uid, nowISO, escapeHtml, debounce, isToxicForCats } from "../utils.js";
 import {
   pageHeader, emptyState, searchInput, showModal, hideModal,
-  showToast, confirmDialog, multiSelectOptions, renderPhotoUploadHtml,
+  showToast, confirmDialog, renderPhotoUploadHtml,
+  renderSearchablePickerHtml, bindSearchablePicker, getSearchablePickerValues,
   bindPhotoUpload,
 } from "../ui.js";
 import { ICONS, iconImg } from "../icons.js";
@@ -43,11 +44,14 @@ function plantFormHtml(plant = null, catalogPlantas, estados, plagas, enfermedad
           <input type="text" class="form-control" id="plant-apodo" value="${escapeHtml(p.apodo)}" placeholder="Mi tomate favorito">
         </div>
         <div class="col-md-6">
-          <label class="form-label" for="plant-catalog">Especie *</label>
-          <select class="form-select" id="plant-catalog" required>
-            <option value="">— Seleccionar —</option>
-            ${catalogPlantas.map((c) => `<option value="${c.id}" ${p.catalogPlantId === c.id ? "selected" : ""}>${escapeHtml(c.nombre)}</option>`).join("")}
-          </select>
+          <label class="form-label">Especie *</label>
+          ${renderSearchablePickerHtml({
+            id: "plant-catalog-picker",
+            items: catalogPlantas,
+            selectedIds: p.catalogPlantId ? [p.catalogPlantId] : [],
+            singleSelect: true,
+            searchPlaceholder: "Buscar especie...",
+          })}
         </div>
         <div class="col-md-6">
           <label class="form-label" for="plant-estado">Estado *</label>
@@ -63,17 +67,22 @@ function plantFormHtml(plant = null, catalogPlantas, estados, plagas, enfermedad
           </select>
         </div>
         <div class="col-md-6">
-          <label class="form-label" for="plant-plagas">Plagas</label>
-          <select class="form-select" id="plant-plagas" multiple size="4">
-            ${multiSelectOptions(plagas, p.plagaIds || [])}
-          </select>
-          <small class="text-muted">Ctrl+clic para varias</small>
+          <label class="form-label">Plagas</label>
+          ${renderSearchablePickerHtml({
+            id: "plant-plagas-picker",
+            items: plagas,
+            selectedIds: p.plagaIds || [],
+            searchPlaceholder: "Buscar plaga...",
+          })}
         </div>
         <div class="col-md-6">
-          <label class="form-label" for="plant-enfermedades">Enfermedades</label>
-          <select class="form-select" id="plant-enfermedades" multiple size="4">
-            ${multiSelectOptions(enfermedades, p.enfermedadIds || [])}
-          </select>
+          <label class="form-label">Enfermedades</label>
+          ${renderSearchablePickerHtml({
+            id: "plant-enfermedades-picker",
+            items: enfermedades,
+            selectedIds: p.enfermedadIds || [],
+            searchPlaceholder: "Buscar enfermedad...",
+          })}
         </div>
         <div class="col-12">
           <label class="form-label" for="plant-notas">Notas</label>
@@ -117,6 +126,10 @@ async function openPlantModal(plant = null) {
     `
   );
 
+  bindSearchablePicker("plant-catalog-picker");
+  bindSearchablePicker("plant-plagas-picker");
+  bindSearchablePicker("plant-enfermedades-picker");
+
   const photoUpload = bindPlantForm(plant?.id);
 
   if (plant) {
@@ -126,15 +139,12 @@ async function openPlantModal(plant = null) {
 
   document.getElementById("save-plant-btn").addEventListener("click", async () => {
     const saveBtn = document.getElementById("save-plant-btn");
-    const catalogPlantId = document.getElementById("plant-catalog").value;
+    const catalogPlantId = getSearchablePickerValues("plant-catalog-picker")[0] || "";
     const estadoId = document.getElementById("plant-estado").value;
     if (!catalogPlantId || !estadoId) {
       showToast("Completa los campos obligatorios", "error");
       return;
     }
-
-    const plagaSelect = document.getElementById("plant-plagas");
-    const enfermedadSelect = document.getElementById("plant-enfermedades");
 
     const data = {
       id: plant?.id || uid(),
@@ -142,8 +152,8 @@ async function openPlantModal(plant = null) {
       catalogPlantId,
       estadoId,
       containerId: document.getElementById("plant-container").value || null,
-      plagaIds: [...plagaSelect.selectedOptions].map((o) => o.value),
-      enfermedadIds: [...enfermedadSelect.selectedOptions].map((o) => o.value),
+      plagaIds: getSearchablePickerValues("plant-plagas-picker"),
+      enfermedadIds: getSearchablePickerValues("plant-enfermedades-picker"),
       notas: document.getElementById("plant-notas").value.trim(),
       createdAt: plant?.createdAt || nowISO(),
       updatedAt: nowISO(),
