@@ -1,0 +1,18 @@
+{
+  "name": "lozargarden",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "sync-assets": "node scripts/sync-icons.mjs",
+    "dev": "npm run sync-assets && vite",
+    "build": "npm run sync-assets && vite build",
+    "preview": "vite preview",
+    "postinstall": "node scripts/sync-icons.mjs"
+  },
+  "dependencies": {
+    "firebase": "^11.6.0"
+  },
+  "devDependencies": {
+    "vite": "^6.3.5"
+  }
+}

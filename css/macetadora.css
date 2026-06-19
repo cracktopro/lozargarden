@@ -1,0 +1,174 @@
+/* Macetadora — calculadora integrada en vista Macetas */
+
+.macetadora-panel {
+  padding: 0;
+}
+
+.macetadora-form-section {
+  margin-bottom: 1rem;
+}
+
+.macetadora-form-section:last-child {
+  margin-bottom: 0;
+}
+
+.macetadora-label {
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--kg-green-deep);
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-bottom: 0.35rem;
+}
+
+.macetadora-label .label-icon,
+.macetadora-label .label-icon-img {
+  flex-shrink: 0;
+}
+
+.macetadora-label .label-icon {
+  font-size: 1rem;
+}
+
+.macetadora-label .label-icon-img {
+  width: 1.15rem;
+  height: 1.15rem;
+  object-fit: contain;
+}
+
+.macetadora-select,
+.macetadora-input {
+  border: 2px solid var(--kg-mint);
+  border-radius: var(--kg-radius-sm);
+  padding: 0.55rem 0.75rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  background: #fff;
+}
+
+.macetadora-select:focus,
+.macetadora-input:focus {
+  border-color: var(--kg-pink-deep);
+  box-shadow: 0 0 0 0.2rem rgba(232, 160, 184, 0.25);
+}
+
+.macetadora-select:disabled,
+.macetadora-select.macetadora-select-locked {
+  background: var(--kg-pink-soft);
+  border-color: var(--kg-mint);
+  cursor: not-allowed;
+  opacity: 1;
+}
+
+.macetadora-input-group {
+  position: relative;
+}
+
+.macetadora-input-group .input-suffix {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--kg-text-soft);
+  font-weight: 700;
+  font-size: 0.8rem;
+  pointer-events: none;
+}
+
+.macetadora-input-group .macetadora-input {
+  padding-right: 2.5rem;
+}
+
+.macetadora-placeholder-hint {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.85rem 1rem;
+  background: var(--kg-green-soft);
+  border-radius: var(--kg-radius-sm);
+  border: 2px dashed var(--kg-green);
+  line-height: 1.35;
+}
+
+.macetadora-result {
+  animation: macetadoraPopIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes macetadoraPopIn {
+  from { opacity: 0; transform: scale(0.95) translateY(6px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.macetadora-result-inner {
+  background: linear-gradient(135deg, var(--kg-green-soft) 0%, var(--kg-pink-soft) 100%);
+  border-radius: var(--kg-radius);
+  padding: 1.25rem 1rem;
+  border: 2px solid var(--kg-green);
+}
+
+.macetadora-result-label {
+  font-weight: 700;
+  color: var(--kg-text-soft);
+  font-size: 0.9rem;
+}
+
+.macetadora-result-value {
+  font-size: clamp(1.75rem, 5vw, 2.5rem);
+  font-weight: 800;
+  color: var(--kg-green-deep);
+  line-height: 1.1;
+}
+
+.macetadora-result-unit {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--kg-text-soft);
+  margin-left: 0.25rem;
+}
+
+.macetadora-result-detail {
+  max-width: 36rem;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.45;
+}
+
+.macetadora-details {
+  background: rgba(255, 255, 255, 0.75);
+  border: 2px solid var(--kg-mint);
+  border-radius: var(--kg-radius-sm);
+  padding: 0.65rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--kg-text-soft);
+}
+
+.macetadora-details summary {
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+  color: var(--kg-green-deep);
+  font-weight: 700;
+}
+
+.macetadora-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.macetadora-details ul {
+  padding-left: 1.25rem;
+  margin-bottom: 0;
+}
+
+.macetadora-section-card .card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .macetadora-result {
+    animation: none;
+  }
+}

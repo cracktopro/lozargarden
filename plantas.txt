@@ -1,0 +1,161 @@
+Acelga;Beta vulgaris var. cicla;No tóxico
+Ajo;Allium sativum;Tóxico
+Albahaca;Ocimum basilicum;No tóxico
+Albaricoquero;Prunus armeniaca;Tóxico
+Alcachofa;Cynara cardunculus var. scolymus;No tóxico
+Alegoría de la casa (Alegría);Impatiens walleriana;No tóxico
+Almendro;Prunus dulcis;Tóxico
+Aloe vera;Aloe vera;Tóxico
+Apio;Apium graveolens;No tóxico
+Arándano;Vaccinium myrtillus;No tóxico
+Arce japonés;Acer palmatum;No tóxico
+Aromática de San Juan (Hipérico);Hypericum perforatum;Tóxico
+Arroz;Oryza sativa;No tóxico
+As pidistra;Aspidistra elatior;No tóxico
+Berenjena;Solanum melongena;Tóxico
+Boj;Buxus sempervirens;Tóxico
+Bougainvillea (Buganvilla);Bougainvillea glabra;No tóxico
+Calabacín;Cucurbita pepo;No tóxico
+Calabaza;Cucurbita maxima;No tóxico
+Caléndula;Calendula officinalis;No tóxico
+Camelia;Camellia japonesa;No tóxico
+Capuchina;Tropaeolum majus;No tóxico
+Cebolla;Allium cepa;Tóxico
+Cerezo;Prunus avium;Tóxico
+Cinta;Chlorophytum comosum;No tóxico
+Ciprés;Cupressus sempervirens;Tóxico
+Ciruelo;Prunus domestica;Tóxico
+Clavel;Dianthus caryophyllus;Tóxico
+Culantro (Cilantro);Coriandrum sativum;No tóxico
+Col de Bruselas;Brassica oleracea var. gemmifera;No tóxico
+Coliflor;Brassica oleracea var. botrytis;No tóxico
+Crisantemo;Chrysanthemum morifolium;Tóxico
+Dalia;Dahlia pinnata;Tóxico
+Don Diego de noche;Mirabilis jalapa;Tóxico
+Eneldo;Anethum graveolens;No tóxico
+Espárrago;Asparagus officinalis;Tóxico
+Espinaca;Spinacia oleracea;No tóxico
+Falsa pimienta;Schinus molle;Tóxico
+Filodendro (Costilla de Adán);Monstera deliciosa;Tóxico
+Fresa;Fragaria vesca;No tóxico
+Fucsia (Pendientes de la reina);Fuchsia magellanica;No tóxico
+Garbanzo;Cicer arietinum;No tóxico
+Geranio;Pelargonium zonale;Tóxico
+Girasol;Helianthus annuus;No tóxico
+Gitanilla;Pelargonium peltatum;Tóxico
+Glicinia;Wisteria sinensis;Tóxico
+Granado;Punica granatum;No tóxico
+Habas;Vicia faba;No tóxico
+Helecho común;Nephrolepis exaltata;No tóxico
+Hiedra;Hedera helix;Tóxico
+Higuera;Ficus carica;Tóxico
+Hinojo;Foeniculum vulgare;Tóxico
+Hortensia;Hydrangea macrophylla;Tóxico
+Jacinto;Hyanthus orientalis;Tóxico
+Jazmín común;Jasminum officinale;No tóxico
+Judía verde (Alubia);Phaseolus vulgaris;No tóxico
+Laurel;Laurus nobilis;Tóxico
+Lechuga;Lactuca sativa;No tóxico
+Lenteja;Lens culinaris;No tóxico
+Lilo;Syringa vulgaris;No tóxico
+Limón (Limonero);Citrus limon;Tóxico
+Lino;Linum usitatissimum;Tóxico
+Madreselva;Lonicera japonica;Tóxico
+Maíz;Zea mays;No tóxico
+Malva;Malva sylvestris;No tóxico
+Manzano;Malus domestica;Tóxico
+Manzanilla;Matricaria chamomilla;Tóxico
+Melocotón (Melocotonero);Prunus persica;Tóxico
+Melón;Cucumis melo;No tóxico
+Menta;Mentha spicata;Tóxico
+Mirasol (Cosmos);Cosmos bipinnatus;No tóxico
+Naranjo dulce;Citrus sinensis;Tóxico
+Nectarina;Prunus persica var. nuciperasica;Tóxico
+Níspero;Eriobotrya japonesa;Tóxico
+Olivo;Olea europaea;No tóxico
+Olmo;Ulmus minor;No tóxico
+Orégano;Origanum vulgare;Tóxico
+Ortiga;Urtica dioica;No tóxico
+Palmera canaria;Phoenix canariensis;No tóxico
+Patata;Solanum tuberosum;Tóxico
+Pelo de ángel (Calabaza confitera);Cucurbita ficifolia;No tóxico
+Pepino;Cucumis sativus;No tóxico
+Peral;Pyrus communis;Tóxico
+Perejil;Petroselinum crispum;Tóxico
+Petunia;Petunia hybrida;No tóxico
+Pimiento;Capsicum annuum;No tóxico
+Pino carrasco;Pinus halepensis;No tóxico
+Pino piñonero;Pinus pinea;No tóxico
+Pita (Agave);Agave americana;Tóxico
+Poto;Epipremnum aureum;Tóxico
+Puerro;Allium ampeloprasum var. porrum;Tóxico
+Rábano;Raphanus sativus;No tóxico
+Retama;Retama sphaerocarpa;Tóxico
+Romero;Salvia rosmarinus;No tóxico
+Rosal;Rosa gallica;No tóxico
+Ruda;Ruta graveolens;Tóxico
+Salvia;Salvia officinalis;No tóxico
+Sandía;Citrullus lanatus;No tóxico
+Tomate;Solanum lycopersicum;Tóxico
+Tomillo;Thymus vulgaris;No tóxico
+Trébol;Trifolium repens;Tóxico
+Tulipán;Tulipa gesneriana;Tóxico
+Uva (Vid);Vitis vinifera;Tóxico
+Yuca;Yucca aloifolia;Tóxico
+Zanahoria;Daucus carota;No tóxico
+Zinnia;Zinnia elegans;No tóxico
+Frambueso;Rubus idaeus;No tóxico
+Grosellero negro;Ribes nigrum;No tóxico
+Grosellero rojo;Ribes rubrum;No tóxico
+Zarzamora;Rubus fruticosus;No tóxico
+Arándano rojo;Vaccinium macrocarpon;No tóxico
+Goji;Lycium barbarum;Tóxico
+Endrino;Prunus spinosa;Tóxico
+Madroño;Arbutus unedo;No tóxico
+Physalis (Alquequenje);Physalis peruviana;Tóxico
+Majuelo (Espino blanco);Crataegus monogyna;No tóxico
+Aro (Calas);Zantedeschia aethiopica;Tóxico
+Azalea;Rhododendron simsii;Tóxico
+Begonia;Begonia semperflorens;Tóxico
+Cambronera;Lycium europaeum;Tóxico
+Canónigo;Valerianella locusta;No tóxico
+Capuchina de jardín;Tropaeolum minus;No tóxico
+Cardo;Cynara cardunculus;Tóxico
+Cebollino;Allium schoenoprasum;Tóxico
+Chayote;Sechium edule;No tóxico
+Chícharo (Guisante);Pisum sativum;Tóxico
+Clavelina;Dianthus deltoides;Tóxico
+Col lombarda;Brassica oleracea var. capitata f. rubra;No tóxico
+Col rizada (Kale);Brassica oleracea var. sabellica;No tóxico
+Cyclamen (Ciclamen);Cyclamen persicum;Tóxico
+Dondiego de día (Ipomoea);Ipomoea purpurea;Tóxico
+Escarola;Cichorium endivia;No tóxico
+Esparraguera africana;Asparagus densiflorus;Tóxico
+Evónimo (Bonetero);Euonymus europaeus;Tóxico
+Glicinia japonesa;Wisteria floribunda;Tóxico
+Hierbabuena;Mentha x piperita;Tóxico
+Hierba luisa;Aloysia citrodora;Tóxico
+Hortensia de invierno;Bergenia crassifolia;Tóxico
+Laurel real;Prunus laurocerasus;Tóxico
+Lavanda;Lavandula angustifolia;Tóxico
+Lirio de San Juan;Hemerochallis fulva;Tóxico
+Margarita;Bellis perennis;Tóxico
+Margarita africana;Dimorphotheca ecklonis;No tóxico
+Mastuerzo;Lepidium sativum;No tóxico
+Melisa;Melissa officinalis;No tóxico
+Mostaza blanca;Sinapis alba;Tóxico
+Nabicol;Brassica napobrassica;No tóxico
+Nabo;Brassica rapa subsp. rapa;No tóxico
+Ocra;Abelmoschus esculentus;No tóxico
+Okra;Abelmoschus esculentus;No tóxico
+Pasionaria (Pasiflora);Passiflora caerulea;Tóxico
+Pensamiento;Viola x wittrockiana;No tóxico
+Pervinca;Vinca minor;Tóxico
+Prímula (Primavera);Primula vulgaris;No tóxico
+Ruibarbo;Rheum rhabarbarum;Tóxico
+Salvia decorativa;Salvia splendens;No tóxico
+Tagete (Clavel de moro);Tagetes patula;Tóxico
+Tuya;Thuja occidentalis;Tóxico
+Valeriana;Valeriana officinalis;No tóxico
+Verbena;Verbena officinalis;Tóxico
+Zanahoria blanca (Chirivía);Pastinaca sativa;No tóxico

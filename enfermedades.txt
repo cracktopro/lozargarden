@@ -1,0 +1,40 @@
+Oidio
+Mildiu
+Roya
+Botritis
+Antracnosis
+Fusariosis
+Verticilosis
+Alternariosis
+Cercosporiosis
+Cribado
+Monilia
+Abolladura
+Negrilla
+Maleza del pie
+Fitóftora
+Chancro
+Podredumbre radicular
+Podredumbre gris
+Podredumbre blanca
+Podredumbre blanda
+Amargor del fruto
+Mal del talluelo
+Mancha negra del rosal
+Mancha bacteriana
+Cáncer bacteriano
+Gomosis
+Fuego bacteriano
+Tuberculosis del olivo
+Xylella
+Virus del mosaico del tomate
+Virus del mosaico
+Virus del bronceado del tomate
+Virus de la cuchara
+Virus del mosaico del pepino
+Cribado del melocotonero
+Sarna de la patata
+Lepra del melocotonero
+Entomosporiosis
+Septoriosis
+Esclerotinia

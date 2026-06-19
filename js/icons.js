@@ -1,0 +1,50 @@
+/** Rutas e helpers de iconos PNG — servidos desde /icons/ (public/icons en build) */
+
+const BASE = "/icons";
+
+export const ICONS = {
+  favicon: `${BASE}/favicon.png`,
+  logo: `${BASE}/logo.png`,
+  nav: {
+    dashboard: `${BASE}/logo.png`,
+    plants: `${BASE}/plantas_nav.png`,
+    diary: `${BASE}/diario_nav.png`,
+    containers: `${BASE}/macetas_nav.png`,
+    treatments: `${BASE}/tratamiento_nav.png`,
+    catalog: `${BASE}/catalogo_nav.png`,
+  },
+  page: {
+    plants: `${BASE}/plantas.png`,
+    diary: `${BASE}/diario.png`,
+    containers: `${BASE}/macetas.png`,
+    treatments: `${BASE}/tratamiento.png`,
+    catalog: `${BASE}/plantas.png`,
+  },
+  catalog: {
+    plantas: `${BASE}/plantas.png`,
+    plagas: `${BASE}/plagas.png`,
+    enfermedades: `${BASE}/enfermedades.png`,
+    estados: `${BASE}/estados.png`,
+  },
+  macetadora: {
+    calculator: `${BASE}/calculadora.png`,
+    shape: `${BASE}/forma.png`,
+    potType: `${BASE}/tipo_macetas.png`,
+  },
+};
+
+export function iconImg(src, className = "app-icon", alt = "") {
+  if (!src) return "";
+  const safeAlt = alt.replace(/"/g, "");
+  return `<img src="${src}" class="${className}" alt="${safeAlt}" loading="lazy" decoding="async">`;
+}
+
+export function navIconImg(viewId, label) {
+  const src = ICONS.nav[viewId];
+  return iconImg(src, "nav-icon-img", label);
+}
+
+export function statIconImg(viewId) {
+  const src = ICONS.page[viewId];
+  return iconImg(src, "stat-icon-img", "");
+}
