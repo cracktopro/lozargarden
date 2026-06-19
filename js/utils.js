@@ -1,5 +1,7 @@
 /** Utilidades compartidas */
 
+import { iconPath } from "./icons.js";
+
 export function uid() {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
     return crypto.randomUUID();
@@ -67,10 +69,12 @@ export function isToxicForCats(toxicidad) {
   return t === "tóxico" || (t.includes("tóxico") && !t.startsWith("no"));
 }
 
+const CONTAINER_ICON = iconPath("macetas.png");
+
 export const CONTAINER_TYPES = [
-  { id: "maceta", label: "Maceta", icon: "/icons/macetas.png" },
-  { id: "jardinera", label: "Jardinera", icon: "/icons/macetas.png" },
-  { id: "semillero", label: "Semillero", icon: "/icons/macetas.png" },
+  { id: "maceta", label: "Maceta", icon: CONTAINER_ICON },
+  { id: "jardinera", label: "Jardinera", icon: CONTAINER_ICON },
+  { id: "semillero", label: "Semillero", icon: CONTAINER_ICON },
 ];
 
 export const NAV_ITEMS = [

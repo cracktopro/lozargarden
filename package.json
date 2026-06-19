@@ -6,6 +6,7 @@
     "sync-assets": "node scripts/sync-icons.mjs",
     "dev": "npm run sync-assets && vite",
     "build": "npm run sync-assets && vite build",
+    "build:pages": "npm run sync-assets && vite build --mode github-pages",
     "preview": "vite preview",
     "postinstall": "node scripts/sync-icons.mjs"
   },

@@ -29,20 +29,34 @@ npm run dev          # http://localhost:8080
 
 **Importante:** usa `npm run dev` (Vite). Si abres la app con otro servidor, ejecuta antes `npm run sync-assets` para copiar los iconos a `/icons/`.
 
-Producción: `npm run build` → carpeta `dist/`
+Producción: `npm run build` → carpeta `dist/` (raíz `/`)
 
-## Deploy en Render (GitHub)
+GitHub Pages: `npm run build:pages` → `dist/` con base `/lozargarden/`
 
-1. Sube el repo a GitHub
-2. En [Render](https://render.com) → New → **Static Site** → conecta el repo
-3. Render detecta `render.yaml` automáticamente:
-   - **Build:** `npm install && npm run build`
-   - **Publish:** `dist/`
-   - Reescritura SPA para rutas `#...`
+## Deploy en GitHub Pages
+
+URL de producción: **https://cracktopro.github.io/lozargarden/**
+
+1. El repo está en GitHub (`cracktopro/lozargarden`)
+2. En el repo → **Settings → Pages → Build and deployment → Source:** elige **GitHub Actions**
+3. Cada push a `main` ejecuta `.github/workflows/deploy-pages.yml`:
+   - `npm ci`
+   - `npm run build:pages` (Vite con `base: /lozargarden/`)
+   - Publica el contenido de `dist/`
 4. Activa Auth, Firestore y Storage en Firebase
-5. En Firebase Console → Authentication → **Authorized domains** → añade tu URL de Render (`*.onrender.com`)
+5. En Firebase Console → Authentication → **Authorized domains** → añade `cracktopro.github.io`
+
+### Rutas de assets en GitHub Pages
+
+GitHub Pages sirve el sitio en un subdirectorio (`/lozargarden/`), no en la raíz del dominio. Por eso:
+
+- `vite.config.js` usa `base: '/lozargarden/'` en modo `github-pages`
+- Los iconos se resuelven con `import.meta.env.BASE_URL` en `js/icons.js` (helper `iconPath()`)
+- En `index.html` las rutas de iconos son relativas (`icons/...`)
 
 Iconos: fuente en `public/icons/`, se copian a `icons/` (dev) y `dist/icons/` (producción).
+
+Para probar el build de Pages en local: `npm run build:pages` y luego `npx vite preview --mode github-pages`.
 
 ## Configuración Firebase (obligatorio)
 
@@ -67,7 +81,9 @@ Lozargarden/
 ├── firestore.rules
 ├── storage.rules
 ├── CONTEXT.md
-├── public/                 # Archivos estáticos (txt de catálogo)
+├── .github/workflows/deploy-pages.yml   # CI: build + deploy a GitHub Pages
+├── public/
+│   ├── icons/              # Iconos PNG (fuente de verdad)
 │   ├── plantas.txt
 │   ├── plagas.txt
 │   ├── enfermedades.txt
@@ -78,6 +94,7 @@ Lozargarden/
     ├── firebase.js         # Inicialización Firebase
     ├── auth.js             # Login, registro, logout
     ├── db.js               # Capa Firestore + Storage (misma API que antes)
+    ├── icons.js            # Rutas de iconos (respeta BASE_URL)
     ├── catalog.js
     ├── ui.js
     ├── utils.js
@@ -174,6 +191,7 @@ Rutas por hash: `#dashboard`, `#plants`, `#diary`, `#containers`, `#treatments`,
 | 2025-06-19 | Creación inicial (IndexedDB) |
 | 2025-06-19 | Migración a Firebase Auth + Firestore + Storage, Vite, login |
 | 2025-06-19 | Fotos: IndexedDB temporal → Firebase Storage (plan Blaze) |
+| 2025-06-19 | Deploy en GitHub Pages: base `/lozargarden/`, rutas de iconos con `BASE_URL`, workflow Actions |
 
 ## Depuración
 

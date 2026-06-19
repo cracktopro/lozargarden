@@ -10,7 +10,9 @@ function mirrorIconsToRoot() {
   cpSync(src, dest, { recursive: true });
 }
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
+  // GitHub Pages sirve en /lozargarden/; local y otros hosts usan /
+  base: mode === "github-pages" ? "/lozargarden/" : "/",
   root: ".",
   publicDir: "public",
   server: {
@@ -34,4 +36,4 @@ export default defineConfig({
       },
     },
   ],
-});
+}));

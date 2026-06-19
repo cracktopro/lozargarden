@@ -1,6 +1,10 @@
-/** Rutas e helpers de iconos PNG — servidos desde /icons/ (public/icons en build) */
+/** Rutas e helpers de iconos PNG — servidos desde public/icons (respeta import.meta.env.BASE_URL) */
 
-const BASE = "/icons";
+export function iconPath(file) {
+  return `${import.meta.env.BASE_URL}icons/${file}`;
+}
+
+const BASE = `${import.meta.env.BASE_URL}icons`;
 
 export const ICONS = {
   favicon: `${BASE}/favicon.png`,
