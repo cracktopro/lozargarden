@@ -10,6 +10,10 @@ import {
   canChangePlantState,
   resetProgressFromIndex,
   isProgressBarReset,
+  syncPlantEstadoId,
+  getStateHistoryEntry,
+  validateEstadoCatalogSelection,
+  resolveEstado,
   renderSpecialStateBadges,
   renderPlantProgressBarHtml,
   renderPlantHealthBarHtml,
@@ -358,6 +362,108 @@ async function openChangeStateModal(plant) {
   });
 }
 
+async function openEditStateEntryModal(plant, entryId, estados) {
+  const entry = getStateHistoryEntry(plant, entryId, estados);
+  if (!entry) {
+    showToast("Entrada no encontrada", "error");
+    return;
+  }
+
+  const pickerItems = estados.map((e) => ({
+    id: e.id,
+    nombre: `Nivel ${e.nivel} · ${e.nombre} (${PLANT_STATE_LEVELS[e.nivel]})`,
+  }));
+
+  showModal(
+    "Editar entrada de estado",
+    `
+      <form id="plant-edit-state-form">
+        <div class="mb-3">
+          <label class="form-label">Estado *</label>
+          ${renderSearchablePickerHtml({
+            id: "plant-edit-state-picker",
+            items: pickerItems,
+            selectedIds: [entry.estadoId],
+            singleSelect: true,
+            searchPlaceholder: "Buscar estado...",
+          })}
+        </div>
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="form-label" for="plant-edit-state-fecha">Fecha *</label>
+            <input type="date" class="form-control" id="plant-edit-state-fecha" value="${escapeHtml(entry.fecha)}" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="plant-edit-state-hora">Hora *</label>
+            <input type="time" class="form-control" id="plant-edit-state-hora" value="${escapeHtml(entry.hora)}" required>
+          </div>
+        </div>
+        <div class="mb-0">
+          <label class="form-label" for="plant-edit-state-detalle">Detalle (opcional)</label>
+          <textarea class="form-control" id="plant-edit-state-detalle" rows="3" placeholder="Observaciones...">${escapeHtml(entry.detalle || "")}</textarea>
+        </div>
+      </form>`,
+    `
+      <button type="button" class="btn btn-kawaii-outline" id="cancel-edit-state-entry-btn">Volver al historial</button>
+      <button type="button" class="btn btn-kawaii" id="save-edit-state-entry-btn">Guardar</button>
+    `
+  );
+
+  bindSearchablePicker("plant-edit-state-picker");
+
+  document.getElementById("cancel-edit-state-entry-btn").addEventListener("click", () => {
+    openStateHistoryModal(plant);
+  });
+
+  document.getElementById("save-edit-state-entry-btn").addEventListener("click", async () => {
+    const saveBtn = document.getElementById("save-edit-state-entry-btn");
+    const estadoId = getSearchablePickerValues("plant-edit-state-picker")[0] || "";
+    const fecha = document.getElementById("plant-edit-state-fecha").value;
+    const hora = document.getElementById("plant-edit-state-hora").value;
+    const detalle = document.getElementById("plant-edit-state-detalle").value.trim();
+    const validation = validateEstadoCatalogSelection(estadoId, estados);
+
+    if (!estadoId || !fecha || !hora) {
+      showToast("Completa estado, fecha y hora", "error");
+      return;
+    }
+    if (!validation.ok) {
+      showToast(validation.message, "error");
+      return;
+    }
+
+    const normalized = normalizePlantStates(plant, estados);
+    const idx = normalized.stateHistory.findIndex((e) => e.id === entryId);
+    if (idx === -1) {
+      showToast("Entrada no encontrada", "error");
+      return;
+    }
+
+    const stateHistory = normalized.stateHistory.map((e, i) =>
+      i === idx ? { ...e, estadoId, fecha, hora, detalle } : e
+    );
+
+    saveBtn.disabled = true;
+    try {
+      const updated = {
+        ...plant,
+        ...normalized,
+        stateHistory,
+        estadoId: syncPlantEstadoId({ ...plant, ...normalized, stateHistory }, estados),
+        updatedAt: nowISO(),
+      };
+      await db.put("plants", updated);
+      showToast("Entrada actualizada");
+      document.dispatchEvent(new CustomEvent("view-refresh"));
+      openStateHistoryModal(updated);
+    } catch (err) {
+      showToast(err.message || "Error al guardar la entrada", "error");
+    } finally {
+      saveBtn.disabled = false;
+    }
+  });
+}
+
 async function openStateHistoryModal(plant) {
   const [estados, cardData] = await Promise.all([
     catalog.getCatalog("estados"),
@@ -400,6 +506,12 @@ async function openStateHistoryModal(plant) {
         document.dispatchEvent(new CustomEvent("view-refresh"));
       }
     );
+  });
+
+  document.getElementById("appModalBody")?.querySelectorAll("[data-edit-state-entry]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      openEditStateEntryModal(plant, btn.dataset.editStateEntry, estados);
+    });
   });
 }
 

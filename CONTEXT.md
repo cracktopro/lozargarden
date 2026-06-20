@@ -205,7 +205,7 @@ Cada entrada:
 | `hora` | string | `HH:mm` |
 | `detalle` | string | Observaciones opcionales |
 
-Al crear una planta no se asigna estado inicial; el usuario lo registra con **Cambiar estado**. La barra de progreso usa iconos por nivel (`nivel1`–`nivel3`, `nivel4_plenitud`, `nivel4_cosecha`). Salud y estados disponibles se calculan solo desde el ciclo activo (`progressFromIndex`). **Reiniciar barra** vacía progreso, salud y nivel actual (solo nivel 1 disponible) conservando el historial. El modal de historial permite **Borrar historial**.
+Al crear una planta no se asigna estado inicial; el usuario lo registra con **Cambiar estado**. Cada entrada del historial se puede **editar** (estado, fecha, hora y detalle) sin borrar el resto del progreso.
 
 #### Sub-estados especiales (`specialStates`)
 

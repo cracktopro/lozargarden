@@ -132,6 +132,23 @@ export function validateStateSelection(plant, estadoId, estados) {
   return { ok: true, estado: selected };
 }
 
+export function validateEstadoCatalogSelection(estadoId, estados) {
+  const selected = resolveEstado(estadoId, estados);
+  if (!selected) {
+    return { ok: false, message: "Selecciona un estado del catálogo" };
+  }
+  return { ok: true, estado: selected };
+}
+
+export function syncPlantEstadoId(plant, estados) {
+  return getCurrentStateEntry(plant, estados)?.entry?.estadoId || null;
+}
+
+export function getStateHistoryEntry(plant, entryId, estados = []) {
+  const { stateHistory } = normalizePlantStates(plant, estados);
+  return stateHistory.find((e) => e.id === entryId) || null;
+}
+
 export function renderSpecialStateBadges(specialStates) {
   const badges = [];
   if (specialStates.reposoInvernal) {
@@ -217,9 +234,14 @@ export function renderStateHistoryModalBody(plant, estados) {
           const nivel = `Nivel ${estado.nivel}`;
           return `
             <div class="plant-history-item">
-              <div class="d-flex flex-wrap justify-content-between gap-2 mb-1">
-                <strong>${escapeHtml(estado.nombre)}</strong>
-                <span class="small text-muted">${escapeHtml(formatDateTime(entry.fecha, entry.hora))}</span>
+              <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-1">
+                <div class="flex-grow-1">
+                  <strong>${escapeHtml(estado.nombre)}</strong>
+                  <div class="small text-muted">${escapeHtml(formatDateTime(entry.fecha, entry.hora))}</div>
+                </div>
+                <button type="button" class="btn btn-sm btn-kawaii-outline flex-shrink-0" data-edit-state-entry="${entry.id}" aria-label="Editar entrada de ${escapeHtml(estado.nombre)}">
+                  <i class="bi bi-pencil"></i>
+                </button>
               </div>
               <div class="small text-muted mb-1">${escapeHtml(nivel)} · ${escapeHtml(PLANT_STATE_LEVELS[estado.nivel] || "")}</div>
               ${entry.detalle ? `<p class="small mb-0">${escapeHtml(entry.detalle)}</p>` : ""}
