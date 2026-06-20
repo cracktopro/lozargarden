@@ -111,7 +111,10 @@ export function getAvailableEstados(plant, estados) {
   const currentNivel = getCurrentNivel(plant, estados);
   if (!currentNivel) return estados.filter((e) => e.nivel === 1);
 
-  return estados.filter((e) => e.nivel === currentNivel || e.nivel === currentNivel + 1);
+  const maxNivel = Math.min(currentNivel + 1, 4);
+  const minNivel = currentNivel >= 2 ? 1 : currentNivel;
+
+  return estados.filter((e) => e.nivel >= minNivel && e.nivel <= maxNivel);
 }
 
 export function canChangePlantState(plant, estados) {

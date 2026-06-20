@@ -236,7 +236,7 @@ async function openChangeStateModal(plant) {
             singleSelect: true,
             searchPlaceholder: "Buscar estado...",
           })}
-          <small class="text-muted">Solo puedes elegir estados del nivel actual o del siguiente.</small>
+          <small class="text-muted">En nivel 1 avanza al siguiente; desde nivel 2 también puedes volver a estados anteriores.</small>
         </div>
         <div class="row g-3 mb-3">
           <div class="col-md-6">

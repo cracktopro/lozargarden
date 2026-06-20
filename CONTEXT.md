@@ -233,7 +233,7 @@ Ejemplo: `1|1|No germinada`
 
 Estados actuales (14): No germinada, Germinando, Plántula, Plantel, Trasplante reciente, Crecimiento activo, En recuperación, Floración, Fructificación, Maduración, Plenitud, Cosecha.
 
-**Reglas de cambio:** solo se puede elegir un estado del **nivel actual** o del **siguiente**. La barra muestra el ciclo activo desde `progressFromIndex`. Clic en la barra (o en «Ver historial» tras reiniciar) abre el historial completo.
+**Reglas de cambio:** sin estado activo solo nivel 1. En nivel 1 puedes elegir estados de nivel 1 o 2. Desde nivel 2 en adelante también están disponibles los niveles anteriores (regresión) y el siguiente. La barra muestra el ciclo activo desde `progressFromIndex`.
 
 **Barra de salud** (4 segmentos bajo la barra de progreso):
 
