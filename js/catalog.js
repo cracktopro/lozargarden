@@ -7,7 +7,7 @@ const CATALOG_MAP = {
   plantas: { store: "catalog_plantas", file: "plantas.txt", type: "plantas" },
   plagas: { store: "catalog_plagas", file: "plagas.txt", type: "line" },
   enfermedades: { store: "catalog_enfermedades", file: "enfermedades.txt", type: "line" },
-  estados: { store: "catalog_estados", file: "estados.txt", type: "line" },
+  estados: { store: "catalog_estados", file: "estados.txt", type: "estados" },
   productos: { store: "catalog_productos", file: "productos.txt", type: "line" },
 };
 
@@ -22,6 +22,20 @@ function parsePlantasLine(line) {
   };
 }
 
+function parseEstadoLine(line) {
+  const trimmed = line.trim();
+  if (!trimmed) return null;
+  const parts = trimmed.split("|");
+  if (parts.length >= 3) {
+    const nivel = parseInt(parts[0], 10);
+    const orden = parseInt(parts[1], 10);
+    const nombre = parts.slice(2).join("|").trim();
+    if (!nombre || Number.isNaN(nivel) || Number.isNaN(orden)) return null;
+    return { id: uid(), nivel, orden, nombre };
+  }
+  return { id: uid(), nombre: trimmed, nivel: 1, orden: 999 };
+}
+
 function parseLineEntry(line) {
   const nombre = line.trim();
   if (!nombre) return null;
@@ -34,12 +48,23 @@ function parseFileContent(key, text) {
   if (config.type === "plantas") {
     return lines.map(parsePlantasLine).filter(Boolean);
   }
+  if (config.type === "estados") {
+    return lines.map(parseEstadoLine).filter(Boolean);
+  }
   return lines.map(parseLineEntry).filter(Boolean);
 }
 
 function serializePlantas(items) {
   return items
     .map((p) => `${p.nombre};${p.nombreLatin};${p.toxicidadGatos}`)
+    .join("\n");
+}
+
+function serializeEstados(items) {
+  return items
+    .slice()
+    .sort((a, b) => (a.nivel - b.nivel) || (a.orden - b.orden))
+    .map((e) => `${e.nivel}|${e.orden}|${e.nombre}`)
     .join("\n");
 }
 
@@ -75,9 +100,19 @@ async function seedCatalogFromFile(key) {
     console.warn(`Catálogo ${key}:`, err);
     if (key === "estados") {
       const defaults = [
-        "No germinada", "Germinando", "Plántula", "Crecimiento activo",
-        "Floración", "Enferma", "Muerta",
-      ].map((nombre) => ({ id: uid(), nombre }));
+        [1, 1, "No germinada"],
+        [1, 2, "Germinando"],
+        [1, 3, "Plántula"],
+        [1, 4, "Plantel"],
+        [2, 1, "Trasplante reciente"],
+        [2, 2, "Crecimiento activo"],
+        [2, 3, "En recuperación"],
+        [3, 1, "Floración"],
+        [3, 2, "Fructificación"],
+        [3, 3, "Maduración"],
+        [4, 1, "Plenitud"],
+        [4, 2, "Cosecha"],
+      ].map(([nivel, orden, nombre]) => ({ id: uid(), nivel, orden, nombre }));
       await db.putMany(config.store, defaults);
     }
   }
@@ -96,6 +131,9 @@ export async function getCatalog(key) {
   const items = await db.getAll(config.store);
   if (key === "plantas") {
     return items.sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+  }
+  if (key === "estados") {
+    return items.sort((a, b) => (a.nivel - b.nivel) || (a.orden - b.orden) || a.nombre.localeCompare(b.nombre, "es"));
   }
   return items.sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
 }
@@ -133,6 +171,7 @@ export async function exportCatalogToText(key) {
   const items = await getCatalog(key);
   const config = CATALOG_MAP[key];
   if (config.type === "plantas") return serializePlantas(items);
+  if (config.type === "estados") return serializeEstados(items);
   return serializeLines(items);
 }
 

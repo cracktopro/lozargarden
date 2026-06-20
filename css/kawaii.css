@@ -550,6 +550,132 @@ body::before {
   opacity: 0.85;
 }
 
+/* Plant state progress + health bars */
+.plant-progress-track-btn {
+  cursor: pointer;
+  text-align: left;
+  border-radius: var(--kg-radius-sm);
+}
+
+.plant-progress-track-btn:focus-visible {
+  outline: 2px solid var(--kg-pink-deep);
+  outline-offset: 2px;
+}
+
+.plant-progress-track {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+  overflow-x: auto;
+  padding: 0.35rem 0.15rem 0.5rem;
+  scrollbar-width: thin;
+}
+
+.plant-progress-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 4.5rem;
+  max-width: 6.5rem;
+  flex: 0 0 auto;
+}
+
+.plant-progress-node {
+  width: 1.65rem;
+  height: 1.65rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--kg-mint);
+  color: var(--kg-text-soft);
+  border: 2px solid var(--kg-green);
+  font-size: 0.85rem;
+}
+
+.plant-progress-step.is-done .plant-progress-node {
+  background: var(--kg-green);
+  color: var(--kg-on-accent);
+}
+
+.plant-progress-step.is-current .plant-progress-node {
+  background: var(--kg-green-deep);
+  color: var(--kg-on-accent);
+  box-shadow: 0 0 0 3px rgba(126, 200, 160, 0.35);
+}
+
+.plant-progress-label {
+  font-size: 0.68rem;
+  line-height: 1.25;
+  text-align: center;
+  color: var(--kg-text-soft);
+  font-weight: 600;
+}
+
+.plant-progress-step.is-current .plant-progress-label {
+  color: var(--kg-green-deep);
+  font-weight: 800;
+}
+
+.plant-progress-line {
+  flex: 1 0 1.25rem;
+  height: 3px;
+  background: var(--kg-mint);
+  margin-top: 0.8rem;
+  border-radius: 999px;
+}
+
+.plant-progress-line.is-done {
+  background: var(--kg-green);
+}
+
+.plant-health-wrap {
+  margin-top: 0.15rem;
+}
+
+.plant-health-bar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.25rem;
+  margin-bottom: 0.35rem;
+}
+
+.plant-health-segment {
+  height: 0.55rem;
+  border-radius: 999px;
+  background: var(--kg-mint);
+  opacity: 0.45;
+}
+
+.plant-health-segment.is-active.is-level-1 {
+  background: #c8d86a;
+  opacity: 1;
+}
+
+.plant-health-segment.is-active.is-level-2 {
+  background: #b8c86a;
+  opacity: 1;
+}
+
+.plant-health-segment.is-active.is-level-3 {
+  background: #98d8a8;
+  opacity: 1;
+}
+
+.plant-health-segment.is-active.is-level-4 {
+  background: #78b898;
+  opacity: 1;
+}
+
+.plant-health-caption {
+  font-size: 0.72rem;
+}
+
+.badge-state-special {
+  font-size: 0.72rem;
+}
+
 .kawaii-card .card-body .small,
 .kawaii-card .card-body p {
   line-height: 1.5;
@@ -1235,6 +1361,14 @@ body::before {
 [data-theme="dark"] .entity-link-btn:hover,
 [data-theme="dark"] .entity-link-btn:focus-visible {
   color: var(--kg-pink-deep);
+}
+
+[data-theme="dark"] .plant-progress-step.is-current .plant-progress-label {
+  color: var(--kg-green-deep);
+}
+
+[data-theme="dark"] .plant-health-segment {
+  background: var(--kg-mint);
 }
 
 @media print {

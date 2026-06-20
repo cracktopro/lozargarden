@@ -105,6 +105,7 @@ Lozargarden/
     ├── db.js               # Capa Firestore + Storage (misma API que antes)
     ├── icons.js            # Rutas de iconos (respeta BASE_URL)
     ├── catalog.js
+    ├── plant-states.js       # Niveles, historial y barras de estado/salud
     ├── ui.js
     ├── utils.js
     └── views/
@@ -175,7 +176,81 @@ Los cambios en Catálogos se guardan en Firestore. Exportar/Importar `.txt` sigu
 
 ## Modelos de datos
 
-Sin cambios respecto a la versión anterior (ver campos en plantas, diary, containers, treatments, photos). Las fotos se comprimen en el cliente antes de subir (máx. 1280 px, JPEG ~82 %, tope 800 KB) y se guardan en Storage con `downloadUrl`.
+### Planta (`users/{uid}/plants/{id}`)
+
+| Campo | Tipo | Notas |
+|-------|------|-------|
+| `id` | string | UUID |
+| `apodo` | string | Opcional |
+| `catalogPlantId` | string | FK → catálogo plantas |
+| `containerId` | string \| null | FK → contenedor del usuario |
+| `plagaIds` | string[] | FKs → plagas |
+| `enfermedadIds` | string[] | FKs → enfermedades |
+| `notas` | string | Texto libre |
+| `stateHistory` | array | Historial completo de cambios de estado (ver abajo) |
+| `progressFromIndex` | number | Índice desde el que se dibuja la barra de progreso (reinicio visual) |
+| `specialStates` | object | `{ reposoInvernal, muerta }` |
+| `estadoId` | string | Legacy: último estado (sincronizado con el historial) |
+| `createdAt` / `updatedAt` | ISO string | |
+
+#### Historial de estados (`stateHistory[]`)
+
+Cada entrada:
+
+| Campo | Tipo |
+|-------|------|
+| `id` | string |
+| `estadoId` | string | FK → `catalogs/estados/items/{id}` |
+| `fecha` | string | `YYYY-MM-DD` |
+| `hora` | string | `HH:mm` |
+| `detalle` | string | Observaciones opcionales |
+
+Al crear una planta se registra automáticamente **No germinada** (nivel 1). Los cambios posteriores se hacen con **Cambiar estado** en la tarjeta.
+
+#### Sub-estados especiales (`specialStates`)
+
+| Flag | Efecto |
+|------|--------|
+| `reposoInvernal` | Badge informativo en la tarjeta |
+| `muerta` | Badge rojo; bloquea nuevos cambios de estado |
+
+### Catálogo de estados (`catalogs/estados/items/{id}`)
+
+Formato en `public/estados.txt`:
+
+```
+nivel|orden|Nombre del estado
+```
+
+Ejemplo: `1|1|No germinada`
+
+| Nivel | Grupo |
+|-------|-------|
+| 1 | Inicio y Siembra |
+| 2 | Crecimiento y Establecimiento |
+| 3 | Floración y Fructificación |
+| 4 | Plenitud y Cosecha |
+
+Estados actuales (14): No germinada, Germinando, Plántula, Plantel, Trasplante reciente, Crecimiento activo, En recuperación, Floración, Fructificación, Maduración, Plenitud, Cosecha.
+
+**Reglas de cambio:** solo se puede elegir un estado del **nivel actual** o del **siguiente**. La barra de progreso muestra únicamente los estados desde el último reinicio (campo `progressFromIndex`); el historial completo se consulta al pulsar la barra. Desde «Cambiar estado» → **Reiniciar barra** se vacía la barra visual sin borrar el historial.
+
+**Barra de salud** (4 segmentos bajo la barra de progreso):
+
+| Nivel | Segmentos pintados | Color |
+|-------|-------------------|-------|
+| 1 | 1 | Amarillo verdoso |
+| 2 | 2 | Verde amarillado |
+| 3 | 3 | Verde clarito |
+| 4 | 4 | Verde |
+
+### Contenedor (`users/{uid}/containers/{id}`)
+
+Campos: `nombre`, `tipo` (`maceta` \| `jardinera` \| `semillero`), `ubicacion`, `capacidad`, `notas`, `plantIds`, timestamps. Fotos en Storage (`ownerType: "container"`). Capacidad de **semilleros** se muestra en **Celdas**; el resto en **L**.
+
+### Diario, tratamientos, fotos
+
+Sin cambios estructurales relevantes. Tratamientos usan `plantIds[]` (multi-planta). Fotos comprimidas en cliente (ver abajo).
 
 ### Compresión de imágenes (`js/image-utils.js`)
 
@@ -193,6 +268,15 @@ Metadatos guardados en Firestore: `width`, `height`, `bytes`, `originalBytes`.
 
 Rutas por hash: `#dashboard`, `#plants`, `#diary`, `#containers`, `#treatments`, `#catalog`
 
+### UX destacada
+
+- **Tema oscuro:** toggle en el nav lateral (violeta pastel); preferencia en `localStorage` (`lozargarden-theme`)
+- **Fotos:** cámara/galería en plantas, diario y contenedores; carrusel modal al pulsar
+- **Vista previa cruzada:** clic en planta (desde maceta) o maceta (desde planta) abre modal con tarjeta + editar
+- **Estados dinámicos:** barra de progreso + barra de salud + badges en tarjetas de plantas
+- **Macetadora:** calculadora de litros integrada en vista Contenedores
+- **Tratamientos:** catálogo de productos, selector multi-planta
+
 ## Historial de desarrollo
 
 | Fecha | Cambio |
@@ -202,9 +286,15 @@ Rutas por hash: `#dashboard`, `#plants`, `#diary`, `#containers`, `#treatments`,
 | 2025-06-19 | Fotos: IndexedDB temporal → Firebase Storage (plan Blaze) |
 | 2025-06-19 | Deploy en GitHub Pages: base `/lozargarden/`, rutas de iconos con `BASE_URL`, workflow Actions |
 | 2025-06-19 | Fotos: botones Cámara/Galería; CORS en Storage para GitHub Pages; errores visibles al guardar |
+| 2025-06-19 | Carrusel modal de fotos; sync de fotos corregido (`syncPhotosByOwner`) |
+| 2025-06-19 | Catálogo productos/tratamientos; tratamientos multi-planta; badges incidencias |
+| 2025-06-19 | Fotos en contenedores; tema oscuro; iconos nav normales |
+| 2025-06-19 | Picker plantas en contenedores; modales cruzados planta↔maceta |
+| 2025-06-19 | Semilleros: capacidad en Celdas; estados dinámicos con historial y barras |
 
 ## Depuración
 
 - **Permiso denegado**: revisar reglas Firestore/Storage y que Auth esté activo
 - **Catálogos vacíos**: borrar doc `meta/catalogs_initialized` en Firestore y recargar
+- **Estados sin nivel/orden**: reimportar `public/estados.txt` desde Catálogos o borrar `catalogs/estados/items` y `meta/catalogs_initialized`
 - **Consola Firebase**: Authentication, Firestore, Storage para ver datos

@@ -1,6 +1,22 @@
 import * as db from "../db.js";
 import * as catalog from "../catalog.js";
-import { uid, nowISO, escapeHtml, debounce, renderToxicityBadge, formatDateTime, getTreatmentPlantIds } from "../utils.js";
+import { uid, nowISO, todayDate, nowTime, escapeHtml, debounce, renderToxicityBadge, formatDateTime, getTreatmentPlantIds } from "../utils.js";
+import {
+  normalizePlantStates,
+  getAvailableEstados,
+  validateStateSelection,
+  buildInitialStateHistory,
+  defaultSpecialStates,
+  getCurrentStateEntry,
+  canChangePlantState,
+  resetProgressFromIndex,
+  isProgressBarReset,
+  renderSpecialStateBadges,
+  renderPlantProgressBarHtml,
+  renderPlantHealthBarHtml,
+  renderStateHistoryModalBody,
+  PLANT_STATE_LEVELS,
+} from "../plant-states.js";
 import {
   pageHeader, emptyState, searchInput, showModal, hideModal,
   showToast, confirmDialog, renderPhotoUploadHtml,
@@ -16,15 +32,15 @@ async function loadPlantPhotos(plantId) {
 }
 
 async function getPlantCardData(plant) {
-  const [planta, estado, container, photos, plagas, enfermedades] = await Promise.all([
+  const [planta, estados, container, photos, plagas, enfermedades] = await Promise.all([
     catalog.findPlantaById(plant.catalogPlantId),
-    catalog.findEstadoById(plant.estadoId),
+    catalog.getCatalog("estados"),
     plant.containerId ? db.getById("containers", plant.containerId) : null,
     loadPlantPhotos(plant.id),
     catalog.getCatalog("plagas"),
     catalog.getCatalog("enfermedades"),
   ]);
-  return { planta, estado, container, photos, plagas, enfermedades };
+  return { planta, estados, container, photos, plagas, enfermedades };
 }
 
 function countPlantTreatments(plantId, allTreatments) {
@@ -102,11 +118,10 @@ async function openPlantTreatmentsModal(plant, allTreatments) {
     </span>`;
 }
 
-function plantFormHtml(plant = null, catalogPlantas, estados, plagas, enfermedades, containers) {
+function plantFormHtml(plant = null, catalogPlantas, plagas, enfermedades, containers) {
   const p = plant || {
     apodo: "",
     catalogPlantId: "",
-    estadoId: estados[0]?.id || "",
     containerId: "",
     plagaIds: [],
     enfermedadIds: [],
@@ -131,17 +146,15 @@ function plantFormHtml(plant = null, catalogPlantas, estados, plagas, enfermedad
           })}
         </div>
         <div class="col-md-6">
-          <label class="form-label" for="plant-estado">Estado *</label>
-          <select class="form-select" id="plant-estado" required>
-            ${estados.map((e) => `<option value="${e.id}" ${p.estadoId === e.id ? "selected" : ""}>${escapeHtml(e.nombre)}</option>`).join("")}
-          </select>
-        </div>
-        <div class="col-md-6">
           <label class="form-label" for="plant-container">Contenedor</label>
           <select class="form-select" id="plant-container">
             <option value="">— Sin asignar —</option>
             ${containers.map((c) => `<option value="${c.id}" ${p.containerId === c.id ? "selected" : ""}>${escapeHtml(c.nombre)} (${escapeHtml(c.tipo)})</option>`).join("")}
           </select>
+        </div>
+        <div class="col-md-6">
+          <p class="form-label mb-1">Estado de la planta</p>
+          <p class="small text-muted mb-0">Gestiona el progreso con el botón «Cambiar estado» en la tarjeta de la planta.</p>
         </div>
         <div class="col-md-6">
           <label class="form-label">Plagas</label>
@@ -185,6 +198,185 @@ function bindPlantForm(plantId = null) {
   });
 }
 
+async function openChangeStateModal(plant) {
+  const estados = await catalog.getCatalog("estados");
+  const { specialStates } = normalizePlantStates(plant, estados);
+  const available = getAvailableEstados(plant, estados);
+  const current = getCurrentStateEntry(plant, estados);
+
+  if (!available.length) {
+    showToast(
+      specialStates.muerta
+        ? "La planta está marcada como muerta. Desactiva ese sub-estado para registrar cambios."
+        : "No hay estados disponibles para esta planta",
+      "error"
+    );
+    return;
+  }
+
+  const pickerItems = available.map((e) => ({
+    id: e.id,
+    nombre: `Nivel ${e.nivel} · ${e.nombre} (${PLANT_STATE_LEVELS[e.nivel]})`,
+  }));
+
+  showModal(
+    "Cambiar estado",
+    `
+      <form id="plant-change-state-form">
+        <p class="small text-muted mb-3">
+          ${current?.estado
+            ? `Estado actual: <strong>${escapeHtml(current.estado.nombre)}</strong> (Nivel ${current.estado.nivel})`
+            : "Registra el primer estado de la planta."}
+        </p>
+        <div class="mb-3">
+          <label class="form-label">Nuevo estado *</label>
+          ${renderSearchablePickerHtml({
+            id: "plant-state-picker",
+            items: pickerItems,
+            selectedIds: [],
+            singleSelect: true,
+            searchPlaceholder: "Buscar estado...",
+          })}
+          <small class="text-muted">Solo puedes elegir estados del nivel actual o del siguiente.</small>
+        </div>
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label class="form-label" for="plant-state-fecha">Fecha *</label>
+            <input type="date" class="form-control" id="plant-state-fecha" value="${todayDate()}" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="plant-state-hora">Hora *</label>
+            <input type="time" class="form-control" id="plant-state-hora" value="${nowTime()}" required>
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="plant-state-detalle">Detalle (opcional)</label>
+          <textarea class="form-control" id="plant-state-detalle" rows="3" placeholder="Observaciones sobre el cambio de estado..."></textarea>
+        </div>
+        <div class="mb-2">
+          <p class="form-label mb-2">Sub-estados especiales</p>
+          <div class="d-flex flex-column gap-2" id="plant-special-states">
+            <label class="kawaii-check-item${specialStates.reposoInvernal ? " is-selected" : ""}">
+              <input type="checkbox" id="plant-state-reposo" ${specialStates.reposoInvernal ? "checked" : ""}>
+              <span class="kawaii-check-mark" aria-hidden="true"></span>
+              <span class="kawaii-check-label">Reposo invernal</span>
+            </label>
+            <label class="kawaii-check-item${specialStates.muerta ? " is-selected" : ""}">
+              <input type="checkbox" id="plant-state-muerta" ${specialStates.muerta ? "checked" : ""}>
+              <span class="kawaii-check-mark" aria-hidden="true"></span>
+              <span class="kawaii-check-label">Muerta</span>
+            </label>
+          </div>
+        </div>
+      </form>`,
+    `
+      <div class="d-flex flex-wrap gap-2 w-100 justify-content-between align-items-center">
+        <button type="button" class="btn btn-kawaii-outline btn-sm" id="reset-plant-progress-btn">Reiniciar barra</button>
+        <div class="d-flex flex-wrap gap-2">
+          <button type="button" class="btn btn-kawaii-outline" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-kawaii" id="save-plant-state-btn">Guardar cambio</button>
+        </div>
+      </div>
+    `
+  );
+
+  bindSearchablePicker("plant-state-picker");
+
+  document.querySelectorAll("#plant-special-states input[type='checkbox']").forEach((input) => {
+    input.addEventListener("change", () => {
+      input.closest(".kawaii-check-item")?.classList.toggle("is-selected", input.checked);
+    });
+  });
+
+  document.getElementById("reset-plant-progress-btn").addEventListener("click", () => {
+    if (isProgressBarReset(plant, estados)) {
+      showToast("La barra de progreso ya está reiniciada", "info");
+      return;
+    }
+    confirmDialog(
+      "Reiniciar barra de progreso",
+      "La barra quedará vacía para un nuevo ciclo. El historial completo se conservará al pulsar sobre ella.",
+      async () => {
+        const normalized = normalizePlantStates(plant, estados);
+        await db.put("plants", {
+          ...plant,
+          ...normalized,
+          progressFromIndex: resetProgressFromIndex(plant, estados),
+          updatedAt: nowISO(),
+        });
+        hideModal();
+        showToast("Barra de progreso reiniciada");
+        document.dispatchEvent(new CustomEvent("view-refresh"));
+      }
+    );
+  });
+
+  document.getElementById("save-plant-state-btn").addEventListener("click", async () => {
+    const saveBtn = document.getElementById("save-plant-state-btn");
+    const estadoId = getSearchablePickerValues("plant-state-picker")[0] || "";
+    const fecha = document.getElementById("plant-state-fecha").value;
+    const hora = document.getElementById("plant-state-hora").value;
+    const detalle = document.getElementById("plant-state-detalle").value.trim();
+    const validation = validateStateSelection(plant, estadoId, estados);
+
+    if (!estadoId || !fecha || !hora) {
+      showToast("Selecciona un estado y completa fecha y hora", "error");
+      return;
+    }
+    if (!validation.ok) {
+      showToast(validation.message, "error");
+      return;
+    }
+
+    const { stateHistory, progressFromIndex } = normalizePlantStates(plant, estados);
+    const newSpecialStates = {
+      reposoInvernal: document.getElementById("plant-state-reposo").checked,
+      muerta: document.getElementById("plant-state-muerta").checked,
+    };
+
+    saveBtn.disabled = true;
+    try {
+      await db.put("plants", {
+        ...plant,
+        stateHistory: [
+          ...stateHistory,
+          { id: uid(), estadoId, fecha, hora, detalle },
+        ],
+        progressFromIndex,
+        specialStates: newSpecialStates,
+        estadoId,
+        updatedAt: nowISO(),
+      });
+      hideModal();
+      showToast("Estado actualizado");
+      document.dispatchEvent(new CustomEvent("view-refresh"));
+    } catch (err) {
+      showToast(err.message || "Error al guardar el estado", "error");
+    } finally {
+      saveBtn.disabled = false;
+    }
+  });
+}
+
+async function openStateHistoryModal(plant) {
+  const [estados, cardData] = await Promise.all([
+    catalog.getCatalog("estados"),
+    getPlantCardData(plant),
+  ]);
+  const displayName = plant.apodo || cardData.planta?.nombre || "Planta";
+
+  showModal(
+    `Historial de estados — ${displayName}`,
+    renderStateHistoryModalBody(plant, estados),
+    `<button type="button" class="btn btn-kawaii-outline" data-bs-dismiss="modal">Cerrar</button>`
+  );
+  document.getElementById("appModalLabel").innerHTML = `
+    <span class="d-inline-flex align-items-center gap-2">
+      ${iconImg(ICONS.catalog.estados, "modal-title-icon", "")}
+      <span>Historial — ${escapeHtml(displayName)}</span>
+    </span>`;
+}
+
 async function openPlantModal(plant = null) {
   const [catalogPlantas, estados, plagas, enfermedades, containers] = await Promise.all([
     catalog.getCatalog("plantas"),
@@ -196,7 +388,7 @@ async function openPlantModal(plant = null) {
 
   showModal(
     plant ? "✏️ Editar planta" : "🌱 Nueva planta",
-    plantFormHtml(plant, catalogPlantas, estados, plagas, enfermedades, containers),
+    plantFormHtml(plant, catalogPlantas, plagas, enfermedades, containers),
     `
       <button type="button" class="btn btn-kawaii-outline" data-bs-dismiss="modal">Cancelar</button>
       <button type="button" class="btn btn-kawaii" id="save-plant-btn">Guardar</button>
@@ -217,21 +409,35 @@ async function openPlantModal(plant = null) {
   document.getElementById("save-plant-btn").addEventListener("click", async () => {
     const saveBtn = document.getElementById("save-plant-btn");
     const catalogPlantId = getSearchablePickerValues("plant-catalog-picker")[0] || "";
-    const estadoId = document.getElementById("plant-estado").value;
-    if (!catalogPlantId || !estadoId) {
+    if (!catalogPlantId) {
       showToast("Completa los campos obligatorios", "error");
       return;
     }
+
+    const { stateHistory, specialStates, progressFromIndex } = plant
+      ? normalizePlantStates(plant, estados)
+      : (() => {
+          const firstEstado = estados.find((e) => e.nivel === 1 && e.orden === 1) || estados[0];
+          return {
+            stateHistory: firstEstado ? buildInitialStateHistory(firstEstado.id) : [],
+            specialStates: defaultSpecialStates(),
+            progressFromIndex: 0,
+          };
+        })();
+    const currentEstadoId = stateHistory[stateHistory.length - 1]?.estadoId || null;
 
     const data = {
       id: plant?.id || uid(),
       apodo: document.getElementById("plant-apodo").value.trim(),
       catalogPlantId,
-      estadoId,
       containerId: document.getElementById("plant-container").value || null,
       plagaIds: getSearchablePickerValues("plant-plagas-picker"),
       enfermedadIds: getSearchablePickerValues("plant-enfermedades-picker"),
       notas: document.getElementById("plant-notas").value.trim(),
+      stateHistory,
+      progressFromIndex,
+      specialStates,
+      estadoId: currentEstadoId,
       createdAt: plant?.createdAt || nowISO(),
       updatedAt: nowISO(),
     };
@@ -253,8 +459,14 @@ async function openPlantModal(plant = null) {
 }
 
 async function buildPlantCardHtml(plant, allTreatments, { preview = false } = {}) {
-  const { planta, estado, container, photos } = await getPlantCardData(plant);
+  const { planta, estados, container, photos } = await getPlantCardData(plant);
+  const { specialStates } = normalizePlantStates(plant, estados);
+  const current = getCurrentStateEntry(plant, estados);
   const displayName = plant.apodo || planta?.nombre || "Planta sin nombre";
+  const progressHtml = renderPlantProgressBarHtml(plant, estados);
+  const healthHtml = renderPlantHealthBarHtml(plant, estados);
+  const specialBadgesHtml = renderSpecialStateBadges(specialStates);
+  const canChangeState = canChangePlantState(plant, estados);
   const imgHtml = photos.length
     ? `<button type="button" class="plant-card-photo-btn w-100 border-0 p-0 bg-transparent" data-photo-gallery="${encodePhotoGallery(photos)}" data-photo-start="0" data-photo-title="${escapeHtml(displayName)}" aria-label="Ver fotos de ${escapeHtml(displayName)}">
         <img src="${photos[0].dataUrl || photos[0].downloadUrl}" class="card-img-top plant-card-img" alt="">
@@ -274,9 +486,12 @@ async function buildPlantCardHtml(plant, allTreatments, { preview = false } = {}
   const footerHtml = preview
     ? ""
     : `
-        <div class="card-footer bg-transparent border-0 d-flex gap-2 pb-3 px-3">
-          <button class="btn btn-sm btn-kawaii-outline flex-fill" data-edit-plant="${plant.id}">Editar</button>
-          <button class="btn btn-sm btn-kawaii btn-kawaii-danger" data-delete-plant="${plant.id}" aria-label="Eliminar">🗑</button>
+        <div class="card-footer bg-transparent border-0 d-flex flex-column gap-2 pb-3 px-3">
+          <button class="btn btn-sm btn-kawaii w-100" data-change-plant-state="${plant.id}" ${canChangeState ? "" : "disabled"}>Cambiar estado</button>
+          <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-kawaii-outline flex-fill" data-edit-plant="${plant.id}">Editar</button>
+            <button class="btn btn-sm btn-kawaii btn-kawaii-danger" data-delete-plant="${plant.id}" aria-label="Eliminar">🗑</button>
+          </div>
         </div>`;
 
   const article = `
@@ -285,7 +500,10 @@ async function buildPlantCardHtml(plant, allTreatments, { preview = false } = {}
         <div class="card-body">
           <h3 class="h6 fw-bold mb-1">${escapeHtml(displayName)}</h3>
           ${planta ? `<p class="small text-muted mb-1 fst-italic">${escapeHtml(planta.nombreLatin)}</p>` : ""}
-          ${estado ? `<span class="badge badge-kawaii-green mb-2">${escapeHtml(estado.nombre)}</span>` : ""}
+          ${specialBadgesHtml}
+          ${progressHtml}
+          ${healthHtml}
+          ${current?.estado ? `<p class="small mb-2"><strong>Actual:</strong> ${escapeHtml(current.estado.nombre)}</p>` : ""}
           ${containerHtml}
           <div class="d-flex flex-wrap gap-2 mt-2">
             ${
@@ -358,6 +576,30 @@ async function bindPlantCardInteractions(root, allTreatments, { preview = false 
       signal ? { signal } : undefined
     );
   });
+
+  root.querySelectorAll("[data-plant-state-history]").forEach((btn) => {
+    btn.addEventListener(
+      "click",
+      async (e) => {
+        e.preventDefault();
+        const plant = await db.getById("plants", btn.dataset.plantStateHistory);
+        if (plant) openStateHistoryModal(plant);
+      },
+      signal ? { signal } : undefined
+    );
+  });
+
+  root.querySelectorAll("[data-change-plant-state]").forEach((btn) => {
+    btn.addEventListener(
+      "click",
+      async (e) => {
+        e.preventDefault();
+        const plant = await db.getById("plants", btn.dataset.changePlantState);
+        if (plant) openChangeStateModal(plant);
+      },
+      signal ? { signal } : undefined
+    );
+  });
 }
 
 export async function openPlantPreviewModal(plantId) {
@@ -371,6 +613,7 @@ export async function openPlantPreviewModal(plantId) {
   }
 
   const { planta } = await getPlantCardData(plant);
+  const estados = await catalog.getCatalog("estados");
   const displayName = plant.apodo || planta?.nombre || "Planta";
 
   showModal(
@@ -378,6 +621,7 @@ export async function openPlantPreviewModal(plantId) {
     `<div class="entity-preview-modal">${await buildPlantCardHtml(plant, allTreatments, { preview: true })}</div>`,
     `
       <button type="button" class="btn btn-kawaii-outline" data-bs-dismiss="modal">Cerrar</button>
+      <button type="button" class="btn btn-kawaii-outline" id="preview-change-plant-state-btn" ${canChangePlantState(plant, estados) ? "" : "disabled"}>Cambiar estado</button>
       <button type="button" class="btn btn-kawaii" id="preview-edit-plant-btn">Editar</button>
     `
   );
@@ -393,6 +637,11 @@ export async function openPlantPreviewModal(plantId) {
   document.getElementById("preview-edit-plant-btn").addEventListener("click", () => {
     hideModal();
     openPlantModal(plant);
+  });
+
+  document.getElementById("preview-change-plant-state-btn")?.addEventListener("click", () => {
+    hideModal();
+    openChangeStateModal(plant);
   });
 }
 
@@ -453,6 +702,22 @@ export function bindEvents(container) {
         const allTreatments = treatmentsCache || (await db.getAll("treatments"));
         openPlantTreatmentsModal(plant, allTreatments);
       }
+      return;
+    }
+
+    const historyBtn = e.target.closest("[data-plant-state-history]");
+    if (historyBtn) {
+      e.preventDefault();
+      const plant = await db.getById("plants", historyBtn.dataset.plantStateHistory);
+      if (plant) openStateHistoryModal(plant);
+      return;
+    }
+
+    const changeStateBtn = e.target.closest("[data-change-plant-state]");
+    if (changeStateBtn) {
+      e.preventDefault();
+      const plant = await db.getById("plants", changeStateBtn.dataset.changePlantState);
+      if (plant) openChangeStateModal(plant);
     }
   });
 

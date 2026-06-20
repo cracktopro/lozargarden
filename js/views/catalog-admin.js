@@ -85,6 +85,39 @@ async function renderPlantasTable(items) {
     </div>`;
 }
 
+async function renderEstadosTable(items) {
+  if (!items.length) return `<p class="text-muted mb-0">No hay estados en el catálogo.</p>`;
+  return `
+    <div class="table-responsive">
+      <table class="table table-hover catalog-table mb-0">
+        <thead>
+          <tr>
+            <th>Nivel</th>
+            <th>Orden</th>
+            <th>Estado</th>
+            <th class="text-end">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${items
+            .map(
+              (item) => `
+            <tr data-catalog-row="${item.id}">
+              <td>${item.nivel ?? "—"}</td>
+              <td>${item.orden ?? "—"}</td>
+              <td>${escapeHtml(item.nombre)}</td>
+              <td class="text-end text-nowrap">
+                <button class="btn btn-sm btn-kawaii-outline" data-edit-catalog="estados" data-id="${item.id}"><i class="bi bi-pencil"></i></button>
+                <button class="btn btn-sm btn-kawaii btn-kawaii-danger" data-delete-catalog="estados" data-id="${item.id}"><i class="bi bi-trash"></i></button>
+              </td>
+            </tr>`
+            )
+            .join("")}
+        </tbody>
+      </table>
+    </div>`;
+}
+
 async function renderSimpleTable(key, items) {
   if (!items.length) return `<p class="text-muted mb-0">No hay entradas.</p>`;
   const label = TABS.find((t) => t.key === key)?.label || key;
@@ -132,6 +165,29 @@ function plantaForm(item = null) {
     </form>`;
 }
 
+function estadoForm(item = null) {
+  const p = item || { nombre: "", nivel: 1, orden: 1 };
+  return `
+    <form id="catalog-form">
+      <div class="mb-3">
+        <label class="form-label" for="cat-nombre">Estado *</label>
+        <input type="text" class="form-control" id="cat-nombre" value="${escapeHtml(p.nombre)}" required>
+      </div>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label" for="cat-nivel">Nivel *</label>
+          <select class="form-select" id="cat-nivel" required>
+            ${[1, 2, 3, 4].map((n) => `<option value="${n}" ${Number(p.nivel) === n ? "selected" : ""}>Nivel ${n}</option>`).join("")}
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label" for="cat-orden">Orden *</label>
+          <input type="number" class="form-control" id="cat-orden" min="1" value="${escapeHtml(String(p.orden ?? 1))}" required>
+        </div>
+      </div>
+    </form>`;
+}
+
 function simpleForm(item = null, label = "Nombre") {
   const p = item || { nombre: "" };
   return `
@@ -145,11 +201,12 @@ function simpleForm(item = null, label = "Nombre") {
 
 async function openCatalogItemModal(key, item = null) {
   const isPlantas = key === "plantas";
+  const isEstados = key === "estados";
   const tabLabel = TABS.find((t) => t.key === key)?.label || key;
 
   showModal(
     item ? `✏️ Editar ${tabLabel.toLowerCase()}` : `➕ Nueva entrada en ${tabLabel.toLowerCase()}`,
-    isPlantas ? plantaForm(item) : simpleForm(item, tabLabel),
+    isPlantas ? plantaForm(item) : isEstados ? estadoForm(item) : simpleForm(item, tabLabel),
     `
       <button type="button" class="btn btn-kawaii-outline" data-bs-dismiss="modal">Cancelar</button>
       <button type="button" class="btn btn-kawaii" id="save-catalog-btn">Guardar</button>
@@ -176,6 +233,14 @@ async function openCatalogItemModal(key, item = null) {
         nombreLatin,
         toxicidadGatos: document.getElementById("cat-toxicidad").value,
       };
+    } else if (isEstados) {
+      const nivel = parseInt(document.getElementById("cat-nivel").value, 10);
+      const orden = parseInt(document.getElementById("cat-orden").value, 10);
+      if (!nivel || !orden) {
+        showToast("Nivel y orden son obligatorios", "error");
+        return;
+      }
+      data = { id: item?.id || uid(), nombre, nivel, orden };
     } else {
       data = { id: item?.id || uid(), nombre };
     }
@@ -204,6 +269,7 @@ async function renderTabContent(key, searchQuery = "") {
   }
 
   if (key === "plantas") return renderPlantasTable(items);
+  if (key === "estados") return renderEstadosTable(items);
   return renderSimpleTable(key, items);
 }
 
