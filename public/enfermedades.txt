@@ -1,40 +1,37 @@
-Oidio
-Mildiu
-Roya
-Botritis
-Antracnosis
-Fusariosis
-Verticilosis
-Alternariosis
-Cercosporiosis
-Cribado
-Monilia
-Abolladura
-Negrilla
-Maleza del pie
-Fitóftora
-Chancro
-Podredumbre radicular
-Podredumbre gris
-Podredumbre blanca
-Podredumbre blanda
-Amargor del fruto
-Mal del talluelo
-Mancha negra del rosal
-Mancha bacteriana
-Cáncer bacteriano
-Gomosis
-Fuego bacteriano
-Tuberculosis del olivo
-Xylella
-Virus del mosaico del tomate
-Virus del mosaico
-Virus del bronceado del tomate
-Virus de la cuchara
-Virus del mosaico del pepino
-Cribado del melocotonero
-Sarna de la patata
-Lepra del melocotonero
-Entomosporiosis
-Septoriosis
-Esclerotinia
+Oidio;Hongo
+Mildiu;Hongo
+Roya;Hongo
+Botritis;Hongo
+Antracnosis;Hongo
+Fusariosis;Hongo
+Verticilosis;Hongo
+Alternariosis;Hongo
+Cercosporiosis;Hongo
+Cribado;Hongo
+Monilia;Hongo
+Abolladura;Hongo
+Negrilla;Hongo
+Maleza del pie;Hongo
+Fitóftora;Oomiceto
+Chancro;Hongo y bacteria
+Podredumbre radicular;Hongo
+Podredumbre blanca;Hongo
+Podredumbre blanda;Bacteria
+Amargor del fruto;Trastorno fisiológico
+Mal del talluelo;Hongo
+Mancha negra del rosal;Hongo
+Mancha bacteriana;Bacteria
+Cáncer bacteriano;Bacteria
+Gomosis;hongos, bacterias o estrés
+Fuego bacteriano;Bacteria
+Tuberculosis del olivo;Bacteria
+Xylella;Bacteria
+Virus del mosaico del tomate;Virus
+Virus del mosaico;Virus
+Virus del bronceado del tomate;Virus
+Virus de la cuchara;Virus
+Virus del mosaico del pepino;Virus
+Sarna de la patata;Bacteria
+Entomosporiosis;Hongo
+Septoriosis;Hongo
+Esclerotinia;Hongo

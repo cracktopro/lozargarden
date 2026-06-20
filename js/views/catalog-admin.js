@@ -118,6 +118,37 @@ async function renderEstadosTable(items) {
     </div>`;
 }
 
+async function renderEnfermedadesTable(items) {
+  if (!items.length) return `<p class="text-muted mb-0">No hay enfermedades en el catálogo.</p>`;
+  return `
+    <div class="table-responsive">
+      <table class="table table-hover catalog-table mb-0">
+        <thead>
+          <tr>
+            <th>Enfermedad</th>
+            <th>Tipo de patógeno</th>
+            <th class="text-end">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${items
+            .map(
+              (item) => `
+            <tr data-catalog-row="${item.id}">
+              <td>${escapeHtml(item.nombre)}</td>
+              <td class="text-muted">${escapeHtml(item.tipoPatogeno || "—")}</td>
+              <td class="text-end text-nowrap">
+                <button class="btn btn-sm btn-kawaii-outline" data-edit-catalog="enfermedades" data-id="${item.id}"><i class="bi bi-pencil"></i></button>
+                <button class="btn btn-sm btn-kawaii btn-kawaii-danger" data-delete-catalog="enfermedades" data-id="${item.id}"><i class="bi bi-trash"></i></button>
+              </td>
+            </tr>`
+            )
+            .join("")}
+        </tbody>
+      </table>
+    </div>`;
+}
+
 async function renderSimpleTable(key, items) {
   if (!items.length) return `<p class="text-muted mb-0">No hay entradas.</p>`;
   const label = TABS.find((t) => t.key === key)?.label || key;
@@ -188,6 +219,21 @@ function estadoForm(item = null) {
     </form>`;
 }
 
+function enfermedadForm(item = null) {
+  const p = item || { nombre: "", tipoPatogeno: "" };
+  return `
+    <form id="catalog-form">
+      <div class="mb-3">
+        <label class="form-label" for="cat-nombre">Enfermedad *</label>
+        <input type="text" class="form-control" id="cat-nombre" value="${escapeHtml(p.nombre)}" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label" for="cat-tipo-patogeno">Tipo de patógeno</label>
+        <input type="text" class="form-control" id="cat-tipo-patogeno" value="${escapeHtml(p.tipoPatogeno || "")}" placeholder="Hongo, Bacteria, Virus...">
+      </div>
+    </form>`;
+}
+
 function simpleForm(item = null, label = "Nombre") {
   const p = item || { nombre: "" };
   return `
@@ -202,11 +248,18 @@ function simpleForm(item = null, label = "Nombre") {
 async function openCatalogItemModal(key, item = null) {
   const isPlantas = key === "plantas";
   const isEstados = key === "estados";
+  const isEnfermedades = key === "enfermedades";
   const tabLabel = TABS.find((t) => t.key === key)?.label || key;
 
   showModal(
     item ? `✏️ Editar ${tabLabel.toLowerCase()}` : `➕ Nueva entrada en ${tabLabel.toLowerCase()}`,
-    isPlantas ? plantaForm(item) : isEstados ? estadoForm(item) : simpleForm(item, tabLabel),
+    isPlantas
+      ? plantaForm(item)
+      : isEstados
+        ? estadoForm(item)
+        : isEnfermedades
+          ? enfermedadForm(item)
+          : simpleForm(item, tabLabel),
     `
       <button type="button" class="btn btn-kawaii-outline" data-bs-dismiss="modal">Cancelar</button>
       <button type="button" class="btn btn-kawaii" id="save-catalog-btn">Guardar</button>
@@ -241,6 +294,12 @@ async function openCatalogItemModal(key, item = null) {
         return;
       }
       data = { id: item?.id || uid(), nombre, nivel, orden };
+    } else if (isEnfermedades) {
+      data = {
+        id: item?.id || uid(),
+        nombre,
+        tipoPatogeno: document.getElementById("cat-tipo-patogeno").value.trim(),
+      };
     } else {
       data = { id: item?.id || uid(), nombre };
     }
@@ -264,12 +323,19 @@ async function renderTabContent(key, searchQuery = "") {
           i.toxicidadGatos.toLowerCase().includes(q)
         );
       }
+      if (key === "enfermedades") {
+        return (
+          i.nombre.toLowerCase().includes(q) ||
+          String(i.tipoPatogeno || "").toLowerCase().includes(q)
+        );
+      }
       return i.nombre.toLowerCase().includes(q);
     });
   }
 
   if (key === "plantas") return renderPlantasTable(items);
   if (key === "estados") return renderEstadosTable(items);
+  if (key === "enfermedades") return renderEnfermedadesTable(items);
   return renderSimpleTable(key, items);
 }
 

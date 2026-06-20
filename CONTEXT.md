@@ -244,6 +244,23 @@ Estados actuales (14): No germinada, Germinando, Plántula, Plantel, Trasplante 
 | 3 | 3 | Verde clarito |
 | 4 | 4 | Verde |
 
+### Catálogo de enfermedades (`catalogs/enfermedades/items/{id}`)
+
+Formato en `public/enfermedades.txt`:
+
+```
+Nombre;Tipo de patógeno
+```
+
+Ejemplo: `Oidio;Hongo`
+
+| Campo | Tipo | Notas |
+|-------|------|-------|
+| `nombre` | string | Nombre de la enfermedad |
+| `tipoPatogeno` | string | Hongo, Bacteria, Virus, Oomiceto, etc. |
+
+Al iniciar sesión, si falta `meta/enfermedades_patogeno_v1`, la app sincroniza el catálogo base desde `enfermedades.txt` (actualiza entradas existentes por nombre y añade las nuevas). Usa **Quitar duplicados** en Catálogos si quedan copias tras la migración.
+
 ### Contenedor (`users/{uid}/containers/{id}`)
 
 Campos: `nombre`, `tipo` (`maceta` \| `jardinera` \| `semillero`), `ubicacion`, `capacidad`, `notas`, `plantIds`, timestamps. Fotos en Storage (`ownerType: "container"`). Capacidad de **semilleros** se muestra en **Celdas**; el resto en **L**.
@@ -291,6 +308,7 @@ Rutas por hash: `#dashboard`, `#plants`, `#diary`, `#containers`, `#treatments`,
 | 2025-06-19 | Fotos en contenedores; tema oscuro; iconos nav normales |
 | 2025-06-19 | Picker plantas en contenedores; modales cruzados planta↔maceta |
 | 2025-06-19 | Semilleros: capacidad en Celdas; estados dinámicos con historial y barras |
+| 2025-06-19 | Catálogo enfermedades con tipo de patógeno; sync automática desde `enfermedades.txt` |
 
 ## Depuración
 

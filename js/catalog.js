@@ -6,7 +6,7 @@ import { uid, nowISO, formatToxicityLabel } from "./utils.js";
 const CATALOG_MAP = {
   plantas: { store: "catalog_plantas", file: "plantas.txt", type: "plantas" },
   plagas: { store: "catalog_plagas", file: "plagas.txt", type: "line" },
-  enfermedades: { store: "catalog_enfermedades", file: "enfermedades.txt", type: "line" },
+  enfermedades: { store: "catalog_enfermedades", file: "enfermedades.txt", type: "enfermedades" },
   estados: { store: "catalog_estados", file: "estados.txt", type: "estados" },
   productos: { store: "catalog_productos", file: "productos.txt", type: "line" },
 };
@@ -36,6 +36,16 @@ function parseEstadoLine(line) {
   return { id: uid(), nombre: trimmed, nivel: 1, orden: 999 };
 }
 
+function parseEnfermedadLine(line) {
+  const trimmed = line.trim();
+  if (!trimmed) return null;
+  const parts = trimmed.split(";");
+  const nombre = parts[0].trim();
+  if (!nombre) return null;
+  const tipoPatogeno = parts.slice(1).join(";").trim();
+  return { id: uid(), nombre, tipoPatogeno };
+}
+
 function parseLineEntry(line) {
   const nombre = line.trim();
   if (!nombre) return null;
@@ -50,6 +60,9 @@ function parseFileContent(key, text) {
   }
   if (config.type === "estados") {
     return lines.map(parseEstadoLine).filter(Boolean);
+  }
+  if (config.type === "enfermedades") {
+    return lines.map(parseEnfermedadLine).filter(Boolean);
   }
   return lines.map(parseLineEntry).filter(Boolean);
 }
@@ -68,6 +81,17 @@ function serializeEstados(items) {
     .join("\n");
 }
 
+function serializeEnfermedades(items) {
+  return items
+    .slice()
+    .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"))
+    .map((e) => {
+      const tipo = String(e.tipoPatogeno ?? "").trim();
+      return tipo ? `${e.nombre};${tipo}` : e.nombre;
+    })
+    .join("\n");
+}
+
 function serializeLines(items) {
   return items.map((i) => i.nombre).join("\n");
 }
@@ -77,6 +101,12 @@ export async function initCatalogs() {
 
   for (const key of Object.keys(CATALOG_MAP)) {
     await seedCatalogIfEmpty(key);
+  }
+
+  const enfermedadesSynced = await db.getMeta("enfermedades_patogeno_v1");
+  if (!enfermedadesSynced) {
+    await upsertCatalogFromFile("enfermedades");
+    await db.setMeta("enfermedades_patogeno_v1", true);
   }
 
   if (!initialized) {
@@ -168,7 +198,57 @@ export async function exportCatalogToText(key) {
   const config = CATALOG_MAP[key];
   if (config.type === "plantas") return serializePlantas(items);
   if (config.type === "estados") return serializeEstados(items);
+  if (config.type === "enfermedades") return serializeEnfermedades(items);
   return serializeLines(items);
+}
+
+export function formatEnfermedadLabel(item) {
+  if (!item?.nombre) return "";
+  const tipo = String(item.tipoPatogeno ?? "").trim();
+  return tipo ? `${item.nombre} (${tipo})` : item.nombre;
+}
+
+export async function upsertCatalogFromFile(key) {
+  const config = CATALOG_MAP[key];
+  if (!config) throw new Error(`Catálogo desconocido: ${key}`);
+
+  const res = await fetch(`./${config.file}`);
+  if (!res.ok) throw new Error(`No se pudo cargar ${config.file}`);
+  const fromFile = parseFileContent(key, await res.text());
+  const existing = await db.getAll(config.store);
+  const byName = new Map(existing.map((item) => [normalizeCatalogText(item.nombre), item]));
+
+  let updated = 0;
+  let created = 0;
+
+  for (const item of fromFile) {
+    const nameKey = normalizeCatalogText(item.nombre);
+    const found = byName.get(nameKey);
+
+    if (found) {
+      const next = {
+        ...found,
+        nombre: item.nombre,
+        ...(item.tipoPatogeno !== undefined ? { tipoPatogeno: item.tipoPatogeno } : {}),
+      };
+      const changed =
+        next.nombre !== found.nombre ||
+        String(next.tipoPatogeno ?? "") !== String(found.tipoPatogeno ?? "");
+      if (changed) {
+        await saveCatalogItem(key, next);
+        byName.set(nameKey, next);
+        updated += 1;
+      }
+      continue;
+    }
+
+    const createdItem = { id: uid(), nombre: item.nombre, tipoPatogeno: item.tipoPatogeno || "" };
+    await saveCatalogItem(key, createdItem);
+    byName.set(nameKey, createdItem);
+    created += 1;
+  }
+
+  return { key, updated, created };
 }
 
 export function downloadTextFile(filename, content) {
@@ -220,6 +300,25 @@ function catalogDedupeKey(key, item) {
   return normalizeCatalogText(item.nombre);
 }
 
+function enfermedadCompleteness(item) {
+  let score = 0;
+  if (String(item.nombre ?? "").trim()) score += 1;
+  if (String(item.tipoPatogeno ?? "").trim()) score += 2;
+  return score;
+}
+
+function mergeEnfermedadRecords(keep, others) {
+  const merged = {
+    ...keep,
+    nombre: String(keep.nombre ?? "").trim() || others.map((o) => o.nombre).find(Boolean)?.trim() || "",
+    tipoPatogeno:
+      String(keep.tipoPatogeno ?? "").trim() ||
+      others.map((o) => o.tipoPatogeno).find((v) => String(v ?? "").trim())?.trim() ||
+      "",
+  };
+  return merged;
+}
+
 function plataCompleteness(item) {
   let score = 0;
   if (String(item.nombre ?? "").trim()) score += 1;
@@ -265,6 +364,12 @@ function pickCatalogItemToKeep(key, group, referencedIds, plants) {
   if (key === "plantas") {
     return sorted.sort(
       (a, b) => plataCompleteness(b) - plataCompleteness(a) || a.id.localeCompare(b.id)
+    )[0];
+  }
+
+  if (key === "enfermedades") {
+    return sorted.sort(
+      (a, b) => enfermedadCompleteness(b) - enfermedadCompleteness(a) || a.id.localeCompare(b.id)
     )[0];
   }
 
@@ -381,6 +486,17 @@ export async function dedupeCatalog(key, { remapUserRefs = true } = {}) {
         keep.nombre = merged.nombre;
         keep.nombreLatin = merged.nombreLatin;
         keep.toxicidadGatos = merged.toxicidadGatos;
+      }
+    }
+
+    if (key === "enfermedades" && others.length) {
+      const merged = mergeEnfermedadRecords(keep, others);
+      const changed =
+        merged.nombre !== keep.nombre || merged.tipoPatogeno !== keep.tipoPatogeno;
+      if (changed) {
+        await saveCatalogItem(key, merged);
+        keep.nombre = merged.nombre;
+        keep.tipoPatogeno = merged.tipoPatogeno;
       }
     }
 
