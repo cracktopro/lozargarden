@@ -205,7 +205,7 @@ Cada entrada:
 | `hora` | string | `HH:mm` |
 | `detalle` | string | Observaciones opcionales |
 
-Al crear una planta no se asigna estado inicial; el usuario lo registra con **Cambiar estado**. Cada entrada del historial se puede **editar** (estado, fecha, hora y detalle) sin borrar el resto del progreso.
+Al crear una planta no se asigna estado inicial; el usuario lo registra con **Cambiar estado**. Cada entrada del historial se puede **editar** o **eliminar** sin borrar el resto del progreso. **Borrar historial** elimina todo el registro.
 
 #### Sub-estados especiales (`specialStates`)
 

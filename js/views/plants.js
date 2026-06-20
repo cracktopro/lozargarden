@@ -12,6 +12,7 @@ import {
   isProgressBarReset,
   syncPlantEstadoId,
   getStateHistoryEntry,
+  removeStateHistoryEntry,
   validateEstadoCatalogSelection,
   resolveEstado,
   renderSpecialStateBadges,
@@ -404,8 +405,15 @@ async function openEditStateEntryModal(plant, entryId, estados) {
         </div>
       </form>`,
     `
-      <button type="button" class="btn btn-kawaii-outline" id="cancel-edit-state-entry-btn">Volver al historial</button>
-      <button type="button" class="btn btn-kawaii" id="save-edit-state-entry-btn">Guardar</button>
+      <div class="d-flex flex-wrap gap-2 w-100 justify-content-between align-items-center">
+        <button type="button" class="btn btn-kawaii-outline btn-kawaii-danger-outline" id="delete-edit-state-entry-btn">
+          <i class="bi bi-trash me-1" aria-hidden="true"></i>Eliminar entrada
+        </button>
+        <div class="d-flex flex-wrap gap-2">
+          <button type="button" class="btn btn-kawaii-outline" id="cancel-edit-state-entry-btn">Volver al historial</button>
+          <button type="button" class="btn btn-kawaii" id="save-edit-state-entry-btn">Guardar</button>
+        </div>
+      </div>
     `
   );
 
@@ -413,6 +421,40 @@ async function openEditStateEntryModal(plant, entryId, estados) {
 
   document.getElementById("cancel-edit-state-entry-btn").addEventListener("click", () => {
     openStateHistoryModal(plant);
+  });
+
+  document.getElementById("delete-edit-state-entry-btn").addEventListener("click", () => {
+    const estado = resolveEstado(entry.estadoId, estados);
+    const label = estado?.nombre || "esta entrada";
+    confirmDialog(
+      "Eliminar entrada",
+      `¿Eliminar «${label}» del historial? Se actualizarán la barra de progreso y la salud.`,
+      async () => {
+        const normalized = normalizePlantStates(plant, estados);
+        const removed = removeStateHistoryEntry(normalized.stateHistory, normalized.progressFromIndex, entryId);
+        if (!removed) {
+          showToast("Entrada no encontrada", "error");
+          return;
+        }
+
+        const updated = {
+          ...plant,
+          ...normalized,
+          ...removed,
+          estadoId: syncPlantEstadoId({ ...plant, ...normalized, ...removed }, estados),
+          updatedAt: nowISO(),
+        };
+        await db.put("plants", updated);
+        showToast("Entrada eliminada");
+        document.dispatchEvent(new CustomEvent("view-refresh"));
+
+        if (removed.stateHistory.length) {
+          openStateHistoryModal(updated);
+        } else {
+          hideModal();
+        }
+      }
+    );
   });
 
   document.getElementById("save-edit-state-entry-btn").addEventListener("click", async () => {
@@ -477,7 +519,9 @@ async function openStateHistoryModal(plant) {
     renderStateHistoryModalBody(plant, estados),
     `
       <div class="d-flex flex-wrap gap-2 w-100 justify-content-between align-items-center">
-        <button type="button" class="btn btn-kawaii-outline btn-sm btn-kawaii-danger" id="delete-plant-state-history-btn" ${stateHistory.length ? "" : "disabled"}>Borrar historial</button>
+        <button type="button" class="btn btn-kawaii btn-kawaii-danger btn-sm" id="delete-plant-state-history-btn" ${stateHistory.length ? "" : "disabled"}>
+          <i class="bi bi-trash me-1" aria-hidden="true"></i>Borrar historial
+        </button>
         <button type="button" class="btn btn-kawaii-outline" data-bs-dismiss="modal">Cerrar</button>
       </div>
     `

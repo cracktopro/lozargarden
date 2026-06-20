@@ -4,7 +4,7 @@ import { uid, nowISO, todayDate, nowTime, formatDateTime, escapeHtml, debounce, 
 import {
   pageHeader, emptyState, searchInput, showModal, hideModal,
   showToast, confirmDialog,
-  renderSearchablePickerHtml, bindSearchablePicker, getSearchablePickerValues,
+  renderSearchablePickerHtml, bindSearchablePicker, bindPickerBulkActions, getSearchablePickerValues,
 } from "../ui.js";
 import { ICONS, iconImg } from "../icons.js";
 
@@ -48,6 +48,7 @@ function treatmentFormHtml(treatment = null, plants = [], productos = []) {
             items: plantItems,
             selectedIds: getTreatmentPlantIds(t),
             searchPlaceholder: "Buscar planta...",
+            showBulkActions: true,
           })}
         </div>
         <div class="col-md-6">
@@ -104,6 +105,7 @@ async function openTreatmentModal(treatment = null) {
   setTreatmentModalTitle(treatment ? "Editar tratamiento" : "Nuevo tratamiento");
 
   bindSearchablePicker("treatment-plants-picker");
+  bindPickerBulkActions("treatment-plants-picker");
   bindSearchablePicker("treatment-producto-picker");
 
   document.getElementById("save-treatment-btn").addEventListener("click", async () => {

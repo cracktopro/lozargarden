@@ -323,6 +323,41 @@ body::before {
 
 .btn-kawaii-danger {
   background: linear-gradient(135deg, #f8b4b4 0%, #e88a8a 100%);
+  border: none;
+  color: #fff;
+  font-weight: 700;
+  border-radius: 2rem;
+}
+
+.btn-kawaii-danger:hover,
+.btn-kawaii-danger:focus {
+  background: linear-gradient(135deg, #e88a8a 0%, #dc6b6b 100%);
+  color: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(220, 107, 107, 0.35);
+}
+
+.btn-kawaii-danger-outline {
+  background: transparent;
+  border: 2px solid #e88a8a;
+  color: #c53030;
+  font-weight: 700;
+  border-radius: 2rem;
+}
+
+.btn-kawaii-danger-outline:hover,
+.btn-kawaii-danger-outline:focus {
+  background: #fde8e8;
+  border-color: #c53030;
+  color: #c53030;
+}
+
+.btn-kawaii-danger-outline:disabled,
+.btn-kawaii-danger:disabled {
+  opacity: 0.55;
+  transform: none;
+  box-shadow: none;
+  cursor: not-allowed;
 }
 
 /* Forms */
@@ -1312,6 +1347,31 @@ body::before {
   background: var(--kg-danger-bg);
   border-color: var(--kg-danger-border);
   color: var(--kg-danger-text);
+}
+
+[data-theme="dark"] .btn-kawaii-danger {
+  background: linear-gradient(135deg, #8f4858 0%, #b85868 100%);
+  color: #fff;
+}
+
+[data-theme="dark"] .btn-kawaii-danger:hover,
+[data-theme="dark"] .btn-kawaii-danger:focus {
+  background: linear-gradient(135deg, #b85868 0%, #cf6878 100%);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+[data-theme="dark"] .btn-kawaii-danger-outline {
+  border-color: #fca5a5;
+  color: #fca5a5;
+  background: transparent;
+}
+
+[data-theme="dark"] .btn-kawaii-danger-outline:hover,
+[data-theme="dark"] .btn-kawaii-danger-outline:focus {
+  background: rgba(127, 72, 88, 0.45);
+  border-color: #fecaca;
+  color: #fecaca;
 }
 
 [data-theme="dark"] .auth-wrapper {

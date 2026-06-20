@@ -149,6 +149,21 @@ export function getStateHistoryEntry(plant, entryId, estados = []) {
   return stateHistory.find((e) => e.id === entryId) || null;
 }
 
+export function removeStateHistoryEntry(stateHistory, progressFromIndex, entryId) {
+  const idx = stateHistory.findIndex((e) => e.id === entryId);
+  if (idx === -1) return null;
+
+  const newHistory = stateHistory.filter((e) => e.id !== entryId);
+  let newProgressFromIndex = progressFromIndex;
+
+  if (idx < progressFromIndex) {
+    newProgressFromIndex = Math.max(0, progressFromIndex - 1);
+  }
+  newProgressFromIndex = Math.min(newProgressFromIndex, newHistory.length);
+
+  return { stateHistory: newHistory, progressFromIndex: newProgressFromIndex };
+}
+
 export function renderSpecialStateBadges(specialStates) {
   const badges = [];
   if (specialStates.reposoInvernal) {

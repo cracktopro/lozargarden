@@ -185,6 +185,7 @@ export function renderSearchablePickerHtml({
   labelKey = "nombre",
   singleSelect = false,
   searchPlaceholder = "Buscar...",
+  showBulkActions = false,
 }) {
   const inputType = singleSelect ? "radio" : "checkbox";
 
@@ -202,8 +203,18 @@ export function renderSearchablePickerHtml({
     })
     .join("");
 
+  const bulkActions =
+    !singleSelect && showBulkActions
+      ? `
+      <div class="d-flex flex-wrap gap-2 mb-2 kawaii-picker-bulk">
+        <button type="button" class="btn btn-sm btn-kawaii-outline" data-picker-select-all>Seleccionar todas</button>
+        <button type="button" class="btn btn-sm btn-kawaii-outline" data-picker-deselect-all>Quitar todas</button>
+      </div>`
+      : "";
+
   return `
     <div class="kawaii-picker" id="${id}" data-single-select="${singleSelect ? "true" : "false"}">
+      ${bulkActions}
       <div class="kawaii-picker-search-wrap">
         <i class="bi bi-search" aria-hidden="true"></i>
         <input type="search" class="form-control kawaii-picker-search" placeholder="${escapeHtml(searchPlaceholder)}" aria-label="${escapeHtml(searchPlaceholder)}">
@@ -244,6 +255,30 @@ export function bindSearchablePicker(pickerId) {
       return;
     }
     e.target.closest(".kawaii-check-item")?.classList.toggle("is-selected", e.target.checked);
+  });
+}
+
+export function setSearchablePickerSelection(pickerId, selected) {
+  const root = document.getElementById(pickerId);
+  if (!root || root.dataset.singleSelect === "true") return;
+  root.querySelectorAll('.kawaii-picker-list input[type="checkbox"]').forEach((input) => {
+    input.checked = selected;
+    input.closest(".kawaii-check-item")?.classList.toggle("is-selected", selected);
+  });
+}
+
+export function bindPickerBulkActions(pickerId) {
+  const root = document.getElementById(pickerId);
+  if (!root || root.dataset.singleSelect === "true") return;
+
+  root.querySelector("[data-picker-select-all]")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    setSearchablePickerSelection(pickerId, true);
+  });
+
+  root.querySelector("[data-picker-deselect-all]")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    setSearchablePickerSelection(pickerId, false);
   });
 }
 
