@@ -205,7 +205,7 @@ Cada entrada:
 | `hora` | string | `HH:mm` |
 | `detalle` | string | Observaciones opcionales |
 
-Al crear una planta se registra automáticamente **No germinada** (nivel 1). Los cambios posteriores se hacen con **Cambiar estado** en la tarjeta.
+Al crear una planta no se asigna estado inicial; el usuario lo registra con **Cambiar estado**. La barra de progreso usa iconos por nivel (`nivel1`–`nivel3`, `nivel4_plenitud`, `nivel4_cosecha`). Salud y estados disponibles se calculan solo desde el ciclo activo (`progressFromIndex`). **Reiniciar barra** vacía progreso, salud y nivel actual (solo nivel 1 disponible) conservando el historial. El modal de historial permite **Borrar historial**.
 
 #### Sub-estados especiales (`specialStates`)
 
@@ -233,7 +233,7 @@ Ejemplo: `1|1|No germinada`
 
 Estados actuales (14): No germinada, Germinando, Plántula, Plantel, Trasplante reciente, Crecimiento activo, En recuperación, Floración, Fructificación, Maduración, Plenitud, Cosecha.
 
-**Reglas de cambio:** solo se puede elegir un estado del **nivel actual** o del **siguiente**. La barra de progreso muestra únicamente los estados desde el último reinicio (campo `progressFromIndex`); el historial completo se consulta al pulsar la barra. Desde «Cambiar estado» → **Reiniciar barra** se vacía la barra visual sin borrar el historial.
+**Reglas de cambio:** solo se puede elegir un estado del **nivel actual** o del **siguiente**. La barra muestra el ciclo activo desde `progressFromIndex`. Clic en la barra (o en «Ver historial» tras reiniciar) abre el historial completo.
 
 **Barra de salud** (4 segmentos bajo la barra de progreso):
 

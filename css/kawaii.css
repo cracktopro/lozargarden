@@ -582,27 +582,41 @@ body::before {
 }
 
 .plant-progress-node {
-  width: 1.65rem;
-  height: 1.65rem;
-  border-radius: 50%;
+  width: 2.5rem;
+  height: 2.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--kg-mint);
-  color: var(--kg-text-soft);
-  border: 2px solid var(--kg-green);
-  font-size: 0.85rem;
+  flex-shrink: 0;
 }
 
-.plant-progress-step.is-done .plant-progress-node {
-  background: var(--kg-green);
-  color: var(--kg-on-accent);
+.plant-progress-icon {
+  width: 2.25rem;
+  height: 2.25rem;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px var(--kg-shadow));
+  transition: transform 0.15s ease, filter 0.15s ease;
 }
 
-.plant-progress-step.is-current .plant-progress-node {
-  background: var(--kg-green-deep);
-  color: var(--kg-on-accent);
-  box-shadow: 0 0 0 3px rgba(126, 200, 160, 0.35);
+.plant-progress-step.is-done .plant-progress-icon {
+  opacity: 0.88;
+}
+
+.plant-progress-step.is-current .plant-progress-icon {
+  transform: scale(1.1);
+  filter: drop-shadow(0 3px 8px var(--kg-shadow)) brightness(1.04);
+}
+
+.plant-history-link {
+  color: var(--kg-green-deep);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.plant-history-link:hover,
+.plant-history-link:focus-visible {
+  color: var(--kg-pink-deep);
+  text-decoration: underline;
 }
 
 .plant-progress-label {

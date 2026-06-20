@@ -1,6 +1,7 @@
 /** Estados dinámicos de plantas — niveles, historial, barras de progreso y salud */
 
 import { uid, todayDate, nowTime, formatDateTime, escapeHtml } from "./utils.js";
+import { ICONS, iconImg } from "./icons.js";
 
 export const PLANT_STATE_LEVELS = {
   1: "Inicio y Siembra",
@@ -18,6 +19,30 @@ export function defaultSpecialStates() {
   return { reposoInvernal: false, muerta: false };
 }
 
+export function resolveEstado(estadoId, estados) {
+  return estados.find((e) => e.id === estadoId) || null;
+}
+
+function normalizeStateName(nombre) {
+  return (nombre || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+}
+
+export function getEstadoProgressIconSrc(estado) {
+  if (!estado?.nivel) return null;
+  const name = normalizeStateName(estado.nombre);
+  if (estado.nivel === 4 && name === "cosecha") return ICONS.states.nivel4Cosecha;
+  if (estado.nivel === 4 && name === "plenitud") return ICONS.states.nivel4Plenitud;
+  if (estado.nivel === 1) return ICONS.states.nivel1;
+  if (estado.nivel === 2) return ICONS.states.nivel2;
+  if (estado.nivel === 3) return ICONS.states.nivel3;
+  if (estado.nivel === 4) return ICONS.states.nivel4Plenitud;
+  return null;
+}
+
 export function normalizePlantStates(plant, estados = []) {
   const specialStates = {
     ...defaultSpecialStates(),
@@ -27,17 +52,20 @@ export function normalizePlantStates(plant, estados = []) {
   let stateHistory = Array.isArray(plant.stateHistory) ? plant.stateHistory.filter((e) => e?.estadoId) : [];
 
   if (!stateHistory.length && plant.estadoId) {
-    const createdDate = plant.createdAt?.slice(0, 10) || todayDate();
-    const createdTime = plant.createdAt?.slice(11, 16) || nowTime();
-    stateHistory = [
-      {
-        id: uid(),
-        estadoId: plant.estadoId,
-        fecha: createdDate,
-        hora: createdTime,
-        detalle: "",
-      },
-    ];
+    const legacyEstado = resolveEstado(plant.estadoId, estados);
+    if (legacyEstado) {
+      const createdDate = plant.createdAt?.slice(0, 10) || todayDate();
+      const createdTime = plant.createdAt?.slice(11, 16) || nowTime();
+      stateHistory = [
+        {
+          id: uid(),
+          estadoId: plant.estadoId,
+          fecha: createdDate,
+          hora: createdTime,
+          detalle: "",
+        },
+      ];
+    }
   }
 
   let progressFromIndex = Number.isInteger(plant.progressFromIndex) ? plant.progressFromIndex : 0;
@@ -49,7 +77,9 @@ export function normalizePlantStates(plant, estados = []) {
 
 export function getProgressHistory(plant, estados = []) {
   const { stateHistory, progressFromIndex } = normalizePlantStates(plant, estados);
-  return stateHistory.slice(progressFromIndex);
+  return stateHistory
+    .slice(progressFromIndex)
+    .filter((entry) => resolveEstado(entry.estadoId, estados));
 }
 
 export function resetProgressFromIndex(plant, estados = []) {
@@ -62,14 +92,10 @@ export function isProgressBarReset(plant, estados = []) {
   return progressFromIndex >= stateHistory.length;
 }
 
-export function resolveEstado(estadoId, estados) {
-  return estados.find((e) => e.id === estadoId) || null;
-}
-
 export function getCurrentStateEntry(plant, estados) {
-  const { stateHistory } = normalizePlantStates(plant, estados);
-  if (!stateHistory.length) return null;
-  const entry = stateHistory[stateHistory.length - 1];
+  const progressHistory = getProgressHistory(plant, estados);
+  if (!progressHistory.length) return null;
+  const entry = progressHistory[progressHistory.length - 1];
   return { entry, estado: resolveEstado(entry.estadoId, estados) };
 }
 
@@ -103,18 +129,6 @@ export function validateStateSelection(plant, estadoId, estados) {
   return { ok: true, estado: selected };
 }
 
-export function buildInitialStateHistory(estadoId, fecha = todayDate(), hora = nowTime()) {
-  return [
-    {
-      id: uid(),
-      estadoId,
-      fecha,
-      hora,
-      detalle: "",
-    },
-  ];
-}
-
 export function renderSpecialStateBadges(specialStates) {
   const badges = [];
   if (specialStates.reposoInvernal) {
@@ -127,33 +141,38 @@ export function renderSpecialStateBadges(specialStates) {
 }
 
 export function renderPlantProgressBarHtml(plant, estados) {
-  const { stateHistory } = normalizePlantStates(plant, estados);
   const progressHistory = getProgressHistory(plant, estados);
+  const { stateHistory } = normalizePlantStates(plant, estados);
 
   if (!progressHistory.length) {
-    const msg = stateHistory.length
-      ? "Barra reiniciada. Añade un nuevo estado para iniciar un ciclo."
-      : "Sin estados registrados. Usa «Cambiar estado» para empezar el seguimiento.";
+    if (!stateHistory.length) return "";
     return `
-      <button type="button" class="plant-progress-track-btn w-100 border-0 bg-transparent p-0 mb-2" data-plant-state-history="${plant.id}" aria-label="Ver historial de estados">
-        <div class="plant-progress-empty small text-muted">${msg}</div>
+      <button type="button" class="btn btn-link btn-sm p-0 mb-2 plant-history-link" data-plant-state-history="${plant.id}">
+        Ver historial (${stateHistory.length})
       </button>`;
   }
 
-  const steps = progressHistory.map((entry, index) => {
-    const estado = resolveEstado(entry.estadoId, estados);
-    const label = estado?.nombre || "Estado desconocido";
-    const isLast = index === progressHistory.length - 1;
-    const stepClass = isLast ? "is-current" : "is-done";
-    const icon = isLast ? "bi-circle-fill" : "bi-check-lg";
+  const steps = progressHistory
+    .map((entry, index) => {
+      const estado = resolveEstado(entry.estadoId, estados);
+      if (!estado) return "";
+      const label = estado.nombre;
+      const iconSrc = getEstadoProgressIconSrc(estado);
+      if (!iconSrc) return "";
+      const isLast = index === progressHistory.length - 1;
+      const stepClass = isLast ? "is-current" : "is-done";
 
-    return `
+      return `
       <div class="plant-progress-step ${stepClass}">
-        <div class="plant-progress-node" aria-hidden="true"><i class="bi ${icon}"></i></div>
+        <div class="plant-progress-node">${iconImg(iconSrc, "plant-progress-icon", label)}</div>
         <span class="plant-progress-label">${escapeHtml(label)}</span>
       </div>
       ${!isLast ? `<div class="plant-progress-line is-done" aria-hidden="true"></div>` : ""}`;
-  }).join("");
+    })
+    .filter(Boolean)
+    .join("");
+
+  if (!steps) return "";
 
   return `
     <button type="button" class="plant-progress-track-btn w-100 border-0 bg-transparent p-0 mb-2" data-plant-state-history="${plant.id}" aria-label="Ver historial de estados">
@@ -163,12 +182,14 @@ export function renderPlantProgressBarHtml(plant, estados) {
 
 export function renderPlantHealthBarHtml(plant, estados) {
   const nivel = getCurrentNivel(plant, estados);
-  const filled = Math.min(Math.max(nivel, 0), 4);
-  const levelLabel = nivel ? PLANT_STATE_LEVELS[nivel] : "Sin nivel";
+  if (!nivel) return "";
+
+  const filled = Math.min(nivel, 4);
+  const levelLabel = PLANT_STATE_LEVELS[nivel];
 
   const segments = [1, 2, 3, 4]
     .map((i) => {
-      const active = i <= filled && nivel > 0;
+      const active = i <= filled;
       return `<div class="plant-health-segment${active ? ` is-active is-level-${nivel}` : ""}" aria-hidden="true"></div>`;
     })
     .join("");
@@ -176,7 +197,7 @@ export function renderPlantHealthBarHtml(plant, estados) {
   return `
     <div class="plant-health-wrap mb-2" aria-label="Salud visual: ${escapeHtml(levelLabel)}">
       <div class="plant-health-bar">${segments}</div>
-      <div class="small text-muted plant-health-caption">${nivel ? `Nivel ${nivel} · ${escapeHtml(levelLabel)}` : "Sin estado de salud"}</div>
+      <div class="small text-muted plant-health-caption">Nivel ${nivel} · ${escapeHtml(levelLabel)}</div>
     </div>`;
 }
 
@@ -189,17 +210,19 @@ export function renderStateHistoryModalBody(plant, estados) {
         .reverse()
         .map((entry) => {
           const estado = resolveEstado(entry.estadoId, estados);
-          const nivel = estado?.nivel ? `Nivel ${estado.nivel}` : "";
+          if (!estado) return "";
+          const nivel = `Nivel ${estado.nivel}`;
           return `
             <div class="plant-history-item">
               <div class="d-flex flex-wrap justify-content-between gap-2 mb-1">
-                <strong>${escapeHtml(estado?.nombre || "Estado desconocido")}</strong>
+                <strong>${escapeHtml(estado.nombre)}</strong>
                 <span class="small text-muted">${escapeHtml(formatDateTime(entry.fecha, entry.hora))}</span>
               </div>
-              ${nivel ? `<div class="small text-muted mb-1">${escapeHtml(nivel)}${estado?.nivel ? ` · ${escapeHtml(PLANT_STATE_LEVELS[estado.nivel] || "")}` : ""}</div>` : ""}
+              <div class="small text-muted mb-1">${escapeHtml(nivel)} · ${escapeHtml(PLANT_STATE_LEVELS[estado.nivel] || "")}</div>
               ${entry.detalle ? `<p class="small mb-0">${escapeHtml(entry.detalle)}</p>` : ""}
             </div>`;
         })
+        .filter(Boolean)
         .join("")
     : `<p class="text-muted mb-0">Todavía no hay cambios de estado registrados.</p>`;
 

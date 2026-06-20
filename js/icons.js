@@ -38,6 +38,13 @@ export const ICONS = {
     estados: `${BASE}/estados.png`,
     productos: `${BASE}/tratamiento.png`,
   },
+  states: {
+    nivel1: `${BASE}/nivel1.png`,
+    nivel2: `${BASE}/nivel2.png`,
+    nivel3: `${BASE}/nivel3.png`,
+    nivel4Plenitud: `${BASE}/nivel4_plenitud.png`,
+    nivel4Cosecha: `${BASE}/nivel4_cosecha.png`,
+  },
   macetadora: {
     calculator: `${BASE}/calculadora.png`,
     shape: `${BASE}/forma.png`,

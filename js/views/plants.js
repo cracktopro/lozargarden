@@ -5,7 +5,6 @@ import {
   normalizePlantStates,
   getAvailableEstados,
   validateStateSelection,
-  buildInitialStateHistory,
   defaultSpecialStates,
   getCurrentStateEntry,
   canChangePlantState,
@@ -302,6 +301,7 @@ async function openChangeStateModal(plant) {
           ...plant,
           ...normalized,
           progressFromIndex: resetProgressFromIndex(plant, estados),
+          estadoId: null,
           updatedAt: nowISO(),
         });
         hideModal();
@@ -364,17 +364,43 @@ async function openStateHistoryModal(plant) {
     getPlantCardData(plant),
   ]);
   const displayName = plant.apodo || cardData.planta?.nombre || "Planta";
+  const { stateHistory } = normalizePlantStates(plant, estados);
 
   showModal(
     `Historial de estados — ${displayName}`,
     renderStateHistoryModalBody(plant, estados),
-    `<button type="button" class="btn btn-kawaii-outline" data-bs-dismiss="modal">Cerrar</button>`
+    `
+      <div class="d-flex flex-wrap gap-2 w-100 justify-content-between align-items-center">
+        <button type="button" class="btn btn-kawaii-outline btn-sm btn-kawaii-danger" id="delete-plant-state-history-btn" ${stateHistory.length ? "" : "disabled"}>Borrar historial</button>
+        <button type="button" class="btn btn-kawaii-outline" data-bs-dismiss="modal">Cerrar</button>
+      </div>
+    `
   );
   document.getElementById("appModalLabel").innerHTML = `
     <span class="d-inline-flex align-items-center gap-2">
       ${iconImg(ICONS.catalog.estados, "modal-title-icon", "")}
       <span>Historial — ${escapeHtml(displayName)}</span>
     </span>`;
+
+  document.getElementById("delete-plant-state-history-btn")?.addEventListener("click", () => {
+    if (!stateHistory.length) return;
+    confirmDialog(
+      "Borrar historial de estados",
+      "Se eliminarán todos los registros de cambios de estado. La barra de progreso y la salud quedarán vacías.",
+      async () => {
+        await db.put("plants", {
+          ...plant,
+          stateHistory: [],
+          progressFromIndex: 0,
+          estadoId: null,
+          updatedAt: nowISO(),
+        });
+        hideModal();
+        showToast("Historial eliminado");
+        document.dispatchEvent(new CustomEvent("view-refresh"));
+      }
+    );
+  });
 }
 
 async function openPlantModal(plant = null) {
@@ -416,15 +442,15 @@ async function openPlantModal(plant = null) {
 
     const { stateHistory, specialStates, progressFromIndex } = plant
       ? normalizePlantStates(plant, estados)
-      : (() => {
-          const firstEstado = estados.find((e) => e.nivel === 1 && e.orden === 1) || estados[0];
-          return {
-            stateHistory: firstEstado ? buildInitialStateHistory(firstEstado.id) : [],
-            specialStates: defaultSpecialStates(),
-            progressFromIndex: 0,
-          };
-        })();
-    const currentEstadoId = stateHistory[stateHistory.length - 1]?.estadoId || null;
+      : {
+          stateHistory: [],
+          specialStates: defaultSpecialStates(),
+          progressFromIndex: 0,
+        };
+    const currentEstadoId = getCurrentStateEntry(
+      { ...plant, stateHistory, progressFromIndex },
+      estados
+    )?.entry?.estadoId || null;
 
     const data = {
       id: plant?.id || uid(),
