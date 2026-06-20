@@ -118,6 +118,37 @@ async function renderEstadosTable(items) {
     </div>`;
 }
 
+async function renderPlagasTable(items) {
+  if (!items.length) return `<p class="text-muted mb-0">No hay plagas en el catálogo.</p>`;
+  return `
+    <div class="table-responsive">
+      <table class="table table-hover catalog-table mb-0">
+        <thead>
+          <tr>
+            <th>Plaga</th>
+            <th>Especie</th>
+            <th class="text-end">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${items
+            .map(
+              (item) => `
+            <tr data-catalog-row="${item.id}">
+              <td>${escapeHtml(item.nombre)}</td>
+              <td class="text-muted">${escapeHtml(item.especie || "—")}</td>
+              <td class="text-end text-nowrap">
+                <button class="btn btn-sm btn-kawaii-outline" data-edit-catalog="plagas" data-id="${item.id}"><i class="bi bi-pencil"></i></button>
+                <button class="btn btn-sm btn-kawaii btn-kawaii-danger" data-delete-catalog="plagas" data-id="${item.id}"><i class="bi bi-trash"></i></button>
+              </td>
+            </tr>`
+            )
+            .join("")}
+        </tbody>
+      </table>
+    </div>`;
+}
+
 async function renderEnfermedadesTable(items) {
   if (!items.length) return `<p class="text-muted mb-0">No hay enfermedades en el catálogo.</p>`;
   return `
@@ -219,6 +250,21 @@ function estadoForm(item = null) {
     </form>`;
 }
 
+function plagaForm(item = null) {
+  const p = item || { nombre: "", especie: "" };
+  return `
+    <form id="catalog-form">
+      <div class="mb-3">
+        <label class="form-label" for="cat-nombre">Plaga *</label>
+        <input type="text" class="form-control" id="cat-nombre" value="${escapeHtml(p.nombre)}" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label" for="cat-especie">Especie</label>
+        <input type="text" class="form-control" id="cat-especie" value="${escapeHtml(p.especie || "")}" placeholder="Hemíptero, Larva de polilla...">
+      </div>
+    </form>`;
+}
+
 function enfermedadForm(item = null) {
   const p = item || { nombre: "", tipoPatogeno: "" };
   return `
@@ -248,6 +294,7 @@ function simpleForm(item = null, label = "Nombre") {
 async function openCatalogItemModal(key, item = null) {
   const isPlantas = key === "plantas";
   const isEstados = key === "estados";
+  const isPlagas = key === "plagas";
   const isEnfermedades = key === "enfermedades";
   const tabLabel = TABS.find((t) => t.key === key)?.label || key;
 
@@ -257,9 +304,11 @@ async function openCatalogItemModal(key, item = null) {
       ? plantaForm(item)
       : isEstados
         ? estadoForm(item)
-        : isEnfermedades
-          ? enfermedadForm(item)
-          : simpleForm(item, tabLabel),
+        : isPlagas
+          ? plagaForm(item)
+          : isEnfermedades
+            ? enfermedadForm(item)
+            : simpleForm(item, tabLabel),
     `
       <button type="button" class="btn btn-kawaii-outline" data-bs-dismiss="modal">Cancelar</button>
       <button type="button" class="btn btn-kawaii" id="save-catalog-btn">Guardar</button>
@@ -294,6 +343,12 @@ async function openCatalogItemModal(key, item = null) {
         return;
       }
       data = { id: item?.id || uid(), nombre, nivel, orden };
+    } else if (isPlagas) {
+      data = {
+        id: item?.id || uid(),
+        nombre,
+        especie: document.getElementById("cat-especie").value.trim(),
+      };
     } else if (isEnfermedades) {
       data = {
         id: item?.id || uid(),
@@ -323,6 +378,9 @@ async function renderTabContent(key, searchQuery = "") {
           i.toxicidadGatos.toLowerCase().includes(q)
         );
       }
+      if (key === "plagas") {
+        return i.nombre.toLowerCase().includes(q) || String(i.especie || "").toLowerCase().includes(q);
+      }
       if (key === "enfermedades") {
         return (
           i.nombre.toLowerCase().includes(q) ||
@@ -335,6 +393,7 @@ async function renderTabContent(key, searchQuery = "") {
 
   if (key === "plantas") return renderPlantasTable(items);
   if (key === "estados") return renderEstadosTable(items);
+  if (key === "plagas") return renderPlagasTable(items);
   if (key === "enfermedades") return renderEnfermedadesTable(items);
   return renderSimpleTable(key, items);
 }
@@ -351,6 +410,17 @@ export async function render() {
         <button class="btn btn-kawaii-outline btn-sm" id="dedupe-catalogs-btn" type="button">
           <i class="bi bi-layers-half"></i> Quitar duplicados
         </button>
+        ${
+          activeTab === "enfermedades"
+            ? `<button class="btn btn-kawaii-outline btn-sm" id="sync-catalog-base-btn" type="button" data-sync-catalog="enfermedades">
+          <i class="bi bi-arrow-repeat"></i> Actualizar tipos
+        </button>`
+            : activeTab === "plagas"
+              ? `<button class="btn btn-kawaii-outline btn-sm" id="sync-catalog-base-btn" type="button" data-sync-catalog="plagas">
+          <i class="bi bi-arrow-repeat"></i> Actualizar especies
+        </button>`
+              : ""
+        }
         <button class="btn btn-kawaii btn-sm" id="add-catalog-btn" type="button"><i class="bi bi-plus-lg"></i> Añadir</button>
       </div>`,
       ICONS.catalog[activeTab]
@@ -370,10 +440,6 @@ export function bindEvents(container) {
       activeTab = btn.dataset.catalogTab;
       document.dispatchEvent(new CustomEvent("view-refresh"));
     });
-  });
-
-  container.querySelector("#add-catalog-btn")?.addEventListener("click", () => {
-    openCatalogItemModal(activeTab);
   });
 
   container.querySelector("#dedupe-catalogs-btn")?.addEventListener("click", () => {
@@ -404,6 +470,33 @@ export function bindEvents(container) {
         }
       }
     );
+  });
+
+  container.querySelector("#add-catalog-btn")?.addEventListener("click", () => {
+    openCatalogItemModal(activeTab);
+  });
+
+  container.querySelector("#sync-catalog-base-btn")?.addEventListener("click", async (e) => {
+    const btn = e.currentTarget;
+    const catalogKey = btn.dataset.syncCatalog;
+    btn.disabled = true;
+    try {
+      const result =
+        catalogKey === "plagas"
+          ? await catalog.syncPlagasFromBase()
+          : await catalog.syncEnfermedadesFromBase();
+      const { updated, created } = result;
+      if (!updated && !created) {
+        showToast(catalogKey === "plagas" ? "Las especies ya están actualizadas" : "Los tipos de patógeno ya están actualizados");
+      } else {
+        showToast(`${updated} actualizada(s), ${created} nueva(s) desde el catálogo base`);
+      }
+      document.dispatchEvent(new CustomEvent("view-refresh"));
+    } catch (err) {
+      showToast(err.message || "Error al actualizar catálogo", "error");
+    } finally {
+      btn.disabled = false;
+    }
   });
 
   const search = container.querySelector("#catalog-search");

@@ -63,7 +63,10 @@ async function openIncidencesModal(plant) {
     catalog.getCatalog("enfermedades"),
   ]);
   const plagaNames = (plant.plagaIds || [])
-    .map((id) => plagas.find((p) => p.id === id)?.nombre)
+    .map((id) => {
+      const item = plagas.find((p) => p.id === id);
+      return item ? catalog.formatPlagaLabel(item) : null;
+    })
     .filter(Boolean);
   const enfermedadNames = (plant.enfermedadIds || [])
     .map((id) => {
@@ -167,7 +170,10 @@ function plantFormHtml(plant = null, catalogPlantas, plagas, enfermedades, conta
           <label class="form-label">Plagas</label>
           ${renderSearchablePickerHtml({
             id: "plant-plagas-picker",
-            items: plagas,
+            items: plagas.map((p) => ({
+              id: p.id,
+              nombre: catalog.formatPlagaLabel(p),
+            })),
             selectedIds: p.plagaIds || [],
             searchPlaceholder: "Buscar plaga...",
           })}

@@ -259,7 +259,22 @@ Ejemplo: `Oidio;Hongo`
 | `nombre` | string | Nombre de la enfermedad |
 | `tipoPatogeno` | string | Hongo, Bacteria, Virus, Oomiceto, etc. |
 
-Al iniciar sesión, si falta `meta/enfermedades_patogeno_v1`, la app sincroniza el catálogo base desde `enfermedades.txt` (actualiza entradas existentes por nombre y añade las nuevas). Usa **Quitar duplicados** en Catálogos si quedan copias tras la migración.
+Al iniciar sesión, la app sincroniza los catálogos base embebidos (`enfermedades.txt`, `plagas.txt`) con Firestore: actualiza **todas** las entradas existentes por nombre y añade las nuevas. En Catálogos puedes pulsar **Actualizar tipos** / **Actualizar especies** para forzar la sync. Usa **Quitar duplicados** si quedan copias.
+
+### Catálogo de plagas (`catalogs/plagas/items/{id}`)
+
+Formato en `public/plagas.txt`:
+
+```
+Nombre;Especie
+```
+
+Ejemplo: `Pulgón;Hemíptero`
+
+| Campo | Tipo | Notas |
+|-------|------|-------|
+| `nombre` | string | Nombre de la plaga |
+| `especie` | string | Hemíptero, Larva de polilla, Arácnido (Ácaro), etc. |
 
 ### Contenedor (`users/{uid}/containers/{id}`)
 
@@ -309,6 +324,7 @@ Rutas por hash: `#dashboard`, `#plants`, `#diary`, `#containers`, `#treatments`,
 | 2025-06-19 | Picker plantas en contenedores; modales cruzados planta↔maceta |
 | 2025-06-19 | Semilleros: capacidad en Celdas; estados dinámicos con historial y barras |
 | 2025-06-19 | Catálogo enfermedades con tipo de patógeno; sync automática desde `enfermedades.txt` |
+| 2025-06-19 | Catálogo plagas con especie; sync automática desde `plagas.txt` |
 
 ## Depuración
 

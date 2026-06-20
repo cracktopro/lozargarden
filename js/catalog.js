@@ -2,10 +2,22 @@
 
 import * as db from "./db.js";
 import { uid, nowISO, formatToxicityLabel } from "./utils.js";
+import enfermedadesBaseText from "../public/enfermedades.txt?raw";
+import plagasBaseText from "../public/plagas.txt?raw";
+
+function catalogFileUrl(file) {
+  const base = import.meta.env?.BASE_URL || "/";
+  return `${base}${file}`;
+}
+
+const CATALOG_EXTRA_FIELD = {
+  plagas: "especie",
+  enfermedades: "tipoPatogeno",
+};
 
 const CATALOG_MAP = {
   plantas: { store: "catalog_plantas", file: "plantas.txt", type: "plantas" },
-  plagas: { store: "catalog_plagas", file: "plagas.txt", type: "line" },
+  plagas: { store: "catalog_plagas", file: "plagas.txt", type: "plagas" },
   enfermedades: { store: "catalog_enfermedades", file: "enfermedades.txt", type: "enfermedades" },
   estados: { store: "catalog_estados", file: "estados.txt", type: "estados" },
   productos: { store: "catalog_productos", file: "productos.txt", type: "line" },
@@ -46,6 +58,16 @@ function parseEnfermedadLine(line) {
   return { id: uid(), nombre, tipoPatogeno };
 }
 
+function parsePlagaLine(line) {
+  const trimmed = line.trim();
+  if (!trimmed) return null;
+  const parts = trimmed.split(";");
+  const nombre = parts[0].trim();
+  if (!nombre) return null;
+  const especie = parts.slice(1).join(";").trim();
+  return { id: uid(), nombre, especie };
+}
+
 function parseLineEntry(line) {
   const nombre = line.trim();
   if (!nombre) return null;
@@ -63,6 +85,9 @@ function parseFileContent(key, text) {
   }
   if (config.type === "enfermedades") {
     return lines.map(parseEnfermedadLine).filter(Boolean);
+  }
+  if (config.type === "plagas") {
+    return lines.map(parsePlagaLine).filter(Boolean);
   }
   return lines.map(parseLineEntry).filter(Boolean);
 }
@@ -92,6 +117,17 @@ function serializeEnfermedades(items) {
     .join("\n");
 }
 
+function serializePlagas(items) {
+  return items
+    .slice()
+    .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"))
+    .map((p) => {
+      const especie = String(p.especie ?? "").trim();
+      return especie ? `${p.nombre};${especie}` : p.nombre;
+    })
+    .join("\n");
+}
+
 function serializeLines(items) {
   return items.map((i) => i.nombre).join("\n");
 }
@@ -103,11 +139,8 @@ export async function initCatalogs() {
     await seedCatalogIfEmpty(key);
   }
 
-  const enfermedadesSynced = await db.getMeta("enfermedades_patogeno_v1");
-  if (!enfermedadesSynced) {
-    await upsertCatalogFromFile("enfermedades");
-    await db.setMeta("enfermedades_patogeno_v1", true);
-  }
+  await syncEnfermedadesFromBase();
+  await syncPlagasFromBase();
 
   if (!initialized) {
     await db.setMeta("catalogs_initialized", true);
@@ -117,7 +150,7 @@ export async function initCatalogs() {
 async function seedCatalogFromFile(key) {
   const config = CATALOG_MAP[key];
   try {
-    const res = await fetch(`./${config.file}`);
+    const res = await fetch(catalogFileUrl(config.file));
     if (!res.ok) throw new Error(`No se pudo cargar ${config.file}`);
     const text = await res.text();
     const items = parseFileContent(key, text);
@@ -199,6 +232,7 @@ export async function exportCatalogToText(key) {
   if (config.type === "plantas") return serializePlantas(items);
   if (config.type === "estados") return serializeEstados(items);
   if (config.type === "enfermedades") return serializeEnfermedades(items);
+  if (config.type === "plagas") return serializePlagas(items);
   return serializeLines(items);
 }
 
@@ -208,47 +242,83 @@ export function formatEnfermedadLabel(item) {
   return tipo ? `${item.nombre} (${tipo})` : item.nombre;
 }
 
-export async function upsertCatalogFromFile(key) {
+export function formatPlagaLabel(item) {
+  if (!item?.nombre) return "";
+  const especie = String(item.especie ?? "").trim();
+  return especie ? `${item.nombre} (${especie})` : item.nombre;
+}
+
+function getCatalogExtraField(key) {
+  return CATALOG_EXTRA_FIELD[key] || null;
+}
+
+export async function upsertCatalogFromFile(key, { text } = {}) {
   const config = CATALOG_MAP[key];
   if (!config) throw new Error(`Catálogo desconocido: ${key}`);
 
-  const res = await fetch(`./${config.file}`);
-  if (!res.ok) throw new Error(`No se pudo cargar ${config.file}`);
-  const fromFile = parseFileContent(key, await res.text());
+  let sourceText = text;
+  if (!sourceText) {
+    const res = await fetch(catalogFileUrl(config.file));
+    if (!res.ok) throw new Error(`No se pudo cargar ${config.file}`);
+    sourceText = await res.text();
+  }
+
+  const extraField = getCatalogExtraField(key);
+  const fromFile = parseFileContent(key, sourceText);
   const existing = await db.getAll(config.store);
-  const byName = new Map(existing.map((item) => [normalizeCatalogText(item.nombre), item]));
+  const byName = indexCatalogItemsByName(existing);
 
   let updated = 0;
   let created = 0;
 
   for (const item of fromFile) {
     const nameKey = normalizeCatalogText(item.nombre);
-    const found = byName.get(nameKey);
+    const matches = byName.get(nameKey) || [];
 
-    if (found) {
-      const next = {
-        ...found,
-        nombre: item.nombre,
-        ...(item.tipoPatogeno !== undefined ? { tipoPatogeno: item.tipoPatogeno } : {}),
-      };
-      const changed =
-        next.nombre !== found.nombre ||
-        String(next.tipoPatogeno ?? "") !== String(found.tipoPatogeno ?? "");
-      if (changed) {
-        await saveCatalogItem(key, next);
-        byName.set(nameKey, next);
-        updated += 1;
+    if (matches.length) {
+      for (const found of matches) {
+        const next = { ...found, nombre: item.nombre };
+        if (extraField) {
+          next[extraField] = String(item[extraField] ?? found[extraField] ?? "").trim();
+        }
+        const changed =
+          next.nombre !== found.nombre ||
+          (extraField && String(next[extraField] ?? "") !== String(found[extraField] ?? ""));
+        if (changed) {
+          await saveCatalogItem(key, next);
+          Object.assign(found, next);
+          updated += 1;
+        }
       }
       continue;
     }
 
-    const createdItem = { id: uid(), nombre: item.nombre, tipoPatogeno: item.tipoPatogeno || "" };
+    const createdItem = { id: uid(), nombre: item.nombre };
+    if (extraField) createdItem[extraField] = item[extraField] || "";
     await saveCatalogItem(key, createdItem);
-    byName.set(nameKey, createdItem);
+    byName.set(nameKey, [createdItem]);
     created += 1;
   }
 
   return { key, updated, created };
+}
+
+export async function syncEnfermedadesFromBase() {
+  return upsertCatalogFromFile("enfermedades", { text: enfermedadesBaseText });
+}
+
+export async function syncPlagasFromBase() {
+  return upsertCatalogFromFile("plagas", { text: plagasBaseText });
+}
+
+function indexCatalogItemsByName(items) {
+  const byName = new Map();
+  for (const item of items) {
+    const nameKey = normalizeCatalogText(item.nombre);
+    if (!byName.has(nameKey)) byName.set(nameKey, []);
+    byName.get(nameKey).push(item);
+  }
+  return byName;
 }
 
 export function downloadTextFile(filename, content) {
@@ -283,6 +353,8 @@ export async function findProductoById(id) {
 
 function normalizeCatalogText(value) {
   return String(value ?? "")
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
     .normalize("NFC")
     .trim()
     .toLowerCase()
@@ -307,6 +379,13 @@ function enfermedadCompleteness(item) {
   return score;
 }
 
+function plagaCompleteness(item) {
+  let score = 0;
+  if (String(item.nombre ?? "").trim()) score += 1;
+  if (String(item.especie ?? "").trim()) score += 2;
+  return score;
+}
+
 function mergeEnfermedadRecords(keep, others) {
   const merged = {
     ...keep,
@@ -314,6 +393,18 @@ function mergeEnfermedadRecords(keep, others) {
     tipoPatogeno:
       String(keep.tipoPatogeno ?? "").trim() ||
       others.map((o) => o.tipoPatogeno).find((v) => String(v ?? "").trim())?.trim() ||
+      "",
+  };
+  return merged;
+}
+
+function mergePlagaRecords(keep, others) {
+  const merged = {
+    ...keep,
+    nombre: String(keep.nombre ?? "").trim() || others.map((o) => o.nombre).find(Boolean)?.trim() || "",
+    especie:
+      String(keep.especie ?? "").trim() ||
+      others.map((o) => o.especie).find((v) => String(v ?? "").trim())?.trim() ||
       "",
   };
   return merged;
@@ -370,6 +461,12 @@ function pickCatalogItemToKeep(key, group, referencedIds, plants) {
   if (key === "enfermedades") {
     return sorted.sort(
       (a, b) => enfermedadCompleteness(b) - enfermedadCompleteness(a) || a.id.localeCompare(b.id)
+    )[0];
+  }
+
+  if (key === "plagas") {
+    return sorted.sort(
+      (a, b) => plagaCompleteness(b) - plagaCompleteness(a) || a.id.localeCompare(b.id)
     )[0];
   }
 
@@ -497,6 +594,16 @@ export async function dedupeCatalog(key, { remapUserRefs = true } = {}) {
         await saveCatalogItem(key, merged);
         keep.nombre = merged.nombre;
         keep.tipoPatogeno = merged.tipoPatogeno;
+      }
+    }
+
+    if (key === "plagas" && others.length) {
+      const merged = mergePlagaRecords(keep, others);
+      const changed = merged.nombre !== keep.nombre || merged.especie !== keep.especie;
+      if (changed) {
+        await saveCatalogItem(key, merged);
+        keep.nombre = merged.nombre;
+        keep.especie = merged.especie;
       }
     }
 

@@ -1,40 +1,40 @@
-Pulgón
-Mosca blanca
-Araña roja
-Cochinilla algodonosa
-Cochinilla parda
-Oruga de la col
-Oruga del tomate
-Rosquilla verde
-Gusano gris
-Trip
-Minador de hojas
-Caracol
-Babosa
-Nematodo
-Rosquilla negra
-Gusano de alambre
-Gusano blanco
-Taladro del geranio
-Escarabajo de la patata
-Mosca del suelo
-Mosca de la fruta
-Mosca del olivo
-Mosca de la cebolla
-Gorgojo
-Chinche verde
-Chinche de la col
-Hormiga
-Termita
-Saltamontes
-Langosta
-Tijereta
-Cochinilla de la humedad
-Falsa oruga
-Pulgón lanígero
-Pulgón negro
-Caparreta negra
-Acaro del bronceado
-Acaro de las agallas
-Orthezia
-Piojo de San José
+Pulgón;Hemíptero
+Mosca blanca;Hemíptero
+Araña roja;Arácnido (Ácaro)
+Cochinilla algodonosa;Hemíptero
+Cochinilla parda;Hemíptero
+Oruga de la col;Larva de mariposa/polilla
+Oruga del tomate;Larva de mariposa/polilla
+Rosquilla verde;Larva de polilla
+Gusano gris;Larva de polilla
+Trip;Tisanóptero
+Minador de hojas;Larva de mosca o polilla
+Caracol;Molusco
+Babosa;Molusco
+Nematodo;Gusano cilíndrico
+Rosquilla negra;Larva de polilla
+Gusano de alambre;Larva de escarabajo
+Gusano blanco;Larva de escarabajo
+Taladro del geranio;Larva de mariposa
+Escarabajo de la patata;Escarabajo
+Mosca del suelo;Mosca/Mosquito
+Mosca de la fruta;Mosca
+Mosca del olivo;Mosca
+Mosca de la cebolla;Mosca
+Gorgojo;Escarabajo
+Chinche verde;Hemíptero
+Chinche de la col;Hemíptero
+Hormiga;Himenóptero
+Termita;Isóptero
+Saltamontes;Ortóptero
+Langosta;Ortóptero
+Tijereta;Dermáptero
+Cochinilla de la humedad;Crustáceo
+Falsa oruga;Larva de avispa
+Pulgón lanígero;Hemíptero
+Pulgón negro;Hemíptero
+Caparreta negra;Hemíptero
+Ácaro del bronceado;Arácnido (Ácaro)
+Ácaro de las agallas;Arácnido (Ácaro)
+Orthezia;Hemíptero
+Piojo de San José;Hemíptero
