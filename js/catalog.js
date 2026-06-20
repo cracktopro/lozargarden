@@ -1,7 +1,7 @@
 /** Gestión de catálogos (plantas, plagas, enfermedades, estados) */
 
 import * as db from "./db.js";
-import { uid } from "./utils.js";
+import { uid, nowISO, formatToxicityLabel } from "./utils.js";
 
 const CATALOG_MAP = {
   plantas: { store: "catalog_plantas", file: "plantas.txt", type: "plantas" },
@@ -75,16 +75,12 @@ function serializeLines(items) {
 export async function initCatalogs() {
   const initialized = await db.getMeta("catalogs_initialized");
 
-  if (!initialized) {
-    for (const [key, config] of Object.entries(CATALOG_MAP)) {
-      await seedCatalogFromFile(key);
-    }
-    await db.setMeta("catalogs_initialized", true);
-    return;
-  }
-
   for (const key of Object.keys(CATALOG_MAP)) {
     await seedCatalogIfEmpty(key);
+  }
+
+  if (!initialized) {
+    await db.setMeta("catalogs_initialized", true);
   }
 }
 
@@ -203,6 +199,218 @@ export async function findEnfermedadById(id) {
 
 export async function findProductoById(id) {
   return getCatalogItem("productos", id);
+}
+
+function normalizeCatalogText(value) {
+  return String(value ?? "")
+    .normalize("NFC")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+}
+
+function catalogDedupeKey(key, item) {
+  const config = CATALOG_MAP[key];
+  if (config.type === "plantas") {
+    return normalizeCatalogText(item.nombre);
+  }
+  if (config.type === "estados") {
+    return `${item.nivel}|${item.orden}|${normalizeCatalogText(item.nombre)}`;
+  }
+  return normalizeCatalogText(item.nombre);
+}
+
+function plataCompleteness(item) {
+  let score = 0;
+  if (String(item.nombre ?? "").trim()) score += 1;
+  if (String(item.nombreLatin ?? "").trim()) score += 2;
+  if (String(item.toxicidadGatos ?? "").trim()) score += 1;
+  return score;
+}
+
+function mergePlantaRecords(keep, others) {
+  const merged = {
+    ...keep,
+    nombre: String(keep.nombre ?? "").trim() || others.map((o) => o.nombre).find(Boolean)?.trim() || "",
+    nombreLatin:
+      String(keep.nombreLatin ?? "").trim() ||
+      others.map((o) => o.nombreLatin).find((v) => String(v ?? "").trim())?.trim() ||
+      "",
+  };
+
+  const toxicidadSource =
+    [keep, ...others].find((item) => String(item.toxicidadGatos ?? "").trim())?.toxicidadGatos || "";
+  merged.toxicidadGatos = toxicidadSource ? formatToxicityLabel(toxicidadSource) : "";
+
+  return merged;
+}
+
+function countCatalogPlantReferences(plants, catalogId) {
+  return plants.filter((plant) => plant.catalogPlantId === catalogId).length;
+}
+
+function pickCatalogItemToKeep(key, group, referencedIds, plants) {
+  const sorted = group.slice().sort((a, b) => a.id.localeCompare(b.id));
+  const referenced = sorted.filter((item) => referencedIds.has(item.id));
+
+  if (referenced.length) {
+    return referenced.sort(
+      (a, b) =>
+        countCatalogPlantReferences(plants, b.id) - countCatalogPlantReferences(plants, a.id) ||
+        plataCompleteness(b) - plataCompleteness(a) ||
+        a.id.localeCompare(b.id)
+    )[0];
+  }
+
+  if (key === "plantas") {
+    return sorted.sort(
+      (a, b) => plataCompleteness(b) - plataCompleteness(a) || a.id.localeCompare(b.id)
+    )[0];
+  }
+
+  return sorted[0];
+}
+
+function collectReferencedCatalogIds(key, plants) {
+  const referenced = new Set();
+  for (const plant of plants) {
+    if (key === "plantas" && plant.catalogPlantId) referenced.add(plant.catalogPlantId);
+    if (key === "plagas") (plant.plagaIds || []).forEach((id) => referenced.add(id));
+    if (key === "enfermedades") (plant.enfermedadIds || []).forEach((id) => referenced.add(id));
+    if (key === "estados") {
+      (plant.stateHistory || []).forEach((entry) => {
+        if (entry.estadoId) referenced.add(entry.estadoId);
+      });
+      if (plant.estadoId) referenced.add(plant.estadoId);
+    }
+  }
+  return referenced;
+}
+
+async function remapPlantCatalogRefs(key, idMap) {
+  if (!Object.keys(idMap).length) return 0;
+
+  const mapId = (id) => idMap[id] || id;
+  const plants = await db.getAll("plants");
+  let updatedCount = 0;
+
+  for (const plant of plants) {
+    let changed = false;
+    const updated = { ...plant };
+
+    if (key === "plantas" && plant.catalogPlantId && idMap[plant.catalogPlantId]) {
+      updated.catalogPlantId = mapId(plant.catalogPlantId);
+      changed = true;
+    }
+
+    if (key === "plagas" && plant.plagaIds?.length) {
+      const nextIds = [...new Set(plant.plagaIds.map(mapId))];
+      if (nextIds.length !== plant.plagaIds.length || nextIds.some((id, idx) => id !== plant.plagaIds[idx])) {
+        updated.plagaIds = nextIds;
+        changed = true;
+      }
+    }
+
+    if (key === "enfermedades" && plant.enfermedadIds?.length) {
+      const nextIds = [...new Set(plant.enfermedadIds.map(mapId))];
+      if (
+        nextIds.length !== plant.enfermedadIds.length ||
+        nextIds.some((id, idx) => id !== plant.enfermedadIds[idx])
+      ) {
+        updated.enfermedadIds = nextIds;
+        changed = true;
+      }
+    }
+
+    if (key === "estados") {
+      const nextHistory = (plant.stateHistory || []).map((entry) => {
+        if (!entry.estadoId || !idMap[entry.estadoId]) return entry;
+        changed = true;
+        return { ...entry, estadoId: mapId(entry.estadoId) };
+      });
+      if (changed) {
+        updated.stateHistory = nextHistory;
+        if (plant.estadoId && idMap[plant.estadoId]) {
+          updated.estadoId = mapId(plant.estadoId);
+        }
+      }
+    }
+
+    if (!changed) continue;
+
+    updated.updatedAt = nowISO();
+    await db.put("plants", updated);
+    updatedCount += 1;
+  }
+
+  return updatedCount;
+}
+
+export async function dedupeCatalog(key, { remapUserRefs = true } = {}) {
+  const config = CATALOG_MAP[key];
+  if (!config) throw new Error(`Catálogo desconocido: ${key}`);
+
+  const items = await db.getAll(config.store);
+  const groups = new Map();
+
+  for (const item of items) {
+    const dedupeKey = catalogDedupeKey(key, item);
+    if (!groups.has(dedupeKey)) groups.set(dedupeKey, []);
+    groups.get(dedupeKey).push(item);
+  }
+
+  const idMap = {};
+  const toRemove = [];
+  const plants = remapUserRefs ? await db.getAll("plants") : [];
+  const referencedIds = remapUserRefs ? collectReferencedCatalogIds(key, plants) : new Set();
+
+  for (const group of groups.values()) {
+    if (group.length <= 1) continue;
+
+    const keep = pickCatalogItemToKeep(key, group, referencedIds, plants);
+    const others = group.filter((item) => item.id !== keep.id);
+
+    if (key === "plantas" && others.length) {
+      const merged = mergePlantaRecords(keep, others);
+      const changed =
+        merged.nombre !== keep.nombre ||
+        merged.nombreLatin !== keep.nombreLatin ||
+        merged.toxicidadGatos !== keep.toxicidadGatos;
+      if (changed) {
+        await saveCatalogItem(key, merged);
+        keep.nombre = merged.nombre;
+        keep.nombreLatin = merged.nombreLatin;
+        keep.toxicidadGatos = merged.toxicidadGatos;
+      }
+    }
+
+    for (const item of others) {
+      idMap[item.id] = keep.id;
+      toRemove.push(item.id);
+    }
+  }
+
+  const plantsUpdated =
+    remapUserRefs && Object.keys(idMap).length ? await remapPlantCatalogRefs(key, idMap) : 0;
+
+  for (const id of toRemove) {
+    await deleteCatalogItem(key, id);
+  }
+
+  return {
+    key,
+    removed: toRemove.length,
+    remappedRefs: Object.keys(idMap).length,
+    plantsUpdated,
+  };
+}
+
+export async function dedupeAllCatalogs({ remapUserRefs = true } = {}) {
+  const results = [];
+  for (const key of Object.keys(CATALOG_MAP)) {
+    results.push(await dedupeCatalog(key, { remapUserRefs }));
+  }
+  return results;
 }
 
 export { CATALOG_MAP };

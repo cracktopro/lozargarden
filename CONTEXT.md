@@ -295,6 +295,7 @@ Rutas por hash: `#dashboard`, `#plants`, `#diary`, `#containers`, `#treatments`,
 ## Depuración
 
 - **Permiso denegado**: revisar reglas Firestore/Storage y que Auth esté activo
-- **Catálogos vacíos**: borrar doc `meta/catalogs_initialized` en Firestore y recargar
-- **Estados sin nivel/orden**: reimportar `public/estados.txt` desde Catálogos o borrar `catalogs/estados/items` y `meta/catalogs_initialized`
+- **Catálogos vacíos**: borrar la colección del catálogo afectado (p. ej. `catalogs/plantas/items`) y el doc `meta/catalogs_initialized`, luego recargar. No borrar solo `catalogs_initialized` si ya hay datos: duplicaría las entradas.
+- **Catálogos duplicados**: en la vista Catálogos, botón **Quitar duplicados** (fusiona por nombre en plantas; remapea referencias de tus plantas).
+- **Estados sin nivel/orden**: borrar `catalogs/estados/items` y `meta/catalogs_initialized`, luego recargar
 - **Consola Firebase**: Authentication, Firestore, Storage para ver datos

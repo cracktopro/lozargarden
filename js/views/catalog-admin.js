@@ -281,7 +281,12 @@ export async function render() {
     ${pageHeader(
       "Catálogos",
       "Plantas, plagas, enfermedades, estados y tratamientos compartidos en Firebase para todos los usuarios",
-      `<button class="btn btn-kawaii btn-sm" id="add-catalog-btn"><i class="bi bi-plus-lg"></i> Añadir</button>`,
+      `<div class="d-flex flex-wrap gap-2">
+        <button class="btn btn-kawaii-outline btn-sm" id="dedupe-catalogs-btn" type="button">
+          <i class="bi bi-layers-half"></i> Quitar duplicados
+        </button>
+        <button class="btn btn-kawaii btn-sm" id="add-catalog-btn" type="button"><i class="bi bi-plus-lg"></i> Añadir</button>
+      </div>`,
       ICONS.catalog[activeTab]
     )}
     ${renderTabs()}
@@ -303,6 +308,36 @@ export function bindEvents(container) {
 
   container.querySelector("#add-catalog-btn")?.addEventListener("click", () => {
     openCatalogItemModal(activeTab);
+  });
+
+  container.querySelector("#dedupe-catalogs-btn")?.addEventListener("click", () => {
+    confirmDialog(
+      "Quitar duplicados",
+      "Se eliminarán entradas repetidas del catálogo (mismo nombre o datos) y se actualizarán las referencias de tus plantas. Los productos de tratamiento no afectan al historial porque se guardan por nombre. ¿Continuar?",
+      async () => {
+        const btn = container.querySelector("#dedupe-catalogs-btn");
+        btn.disabled = true;
+        try {
+          const results = await catalog.dedupeAllCatalogs();
+          const removed = results.reduce((sum, r) => sum + r.removed, 0);
+          const plantsUpdated = results.reduce((sum, r) => sum + r.plantsUpdated, 0);
+
+          if (!removed) {
+            showToast("No se encontraron duplicados");
+          } else {
+            const detail = plantsUpdated
+              ? `${removed} entradas eliminadas; ${plantsUpdated} planta(s) actualizada(s).`
+              : `${removed} entradas duplicadas eliminadas.`;
+            showToast(detail);
+          }
+          document.dispatchEvent(new CustomEvent("view-refresh"));
+        } catch (err) {
+          showToast(err.message || "Error al quitar duplicados", "error");
+        } finally {
+          btn.disabled = false;
+        }
+      }
+    );
   });
 
   const search = container.querySelector("#catalog-search");
